@@ -1,0 +1,42 @@
+{
+  "sourceLabel": "Slot Hasil CloudSim Plus 8.0.0 (Kelompok 4 - Menunggu Simulasi Hybrid Tim)",
+  "isPlaceholder": true,
+  "scenarios": [
+    {
+      "id": "tc1-500x50",
+      "dataset": "gocj",
+      "tasks": 500,
+      "vms": 50,
+      "evaluationBudget": 22501,
+      "runs": 10,
+      "results": []
+    },
+    {
+      "id": "tc1-1000x50",
+      "dataset": "gocj",
+      "tasks": 1000,
+      "vms": 50,
+      "evaluationBudget": 22501,
+      "runs": 10,
+      "results": []
+    },
+    {
+      "id": "tc2-750x10",
+      "dataset": "gocj",
+      "tasks": 750,
+      "vms": 10,
+      "evaluationBudget": 22501,
+      "runs": 10,
+      "results": []
+    },
+    {
+      "id": "nasa-750x50",
+      "dataset": "nasa",
+      "tasks": 750,
+      "vms": 50,
+      "evaluationBudget": 22501,
+      "runs": 10,
+      "results": []
+    }
+  ]
+}
