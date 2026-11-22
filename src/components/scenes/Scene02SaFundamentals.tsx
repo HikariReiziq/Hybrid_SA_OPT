@@ -1,67 +1,90 @@
-import { useMemo, useState } from 'react';
-import {
-  coolTemperature,
-  metropolisProbability,
-} from '../../lib/algorithms/hybridSa2Opt';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { QUIZZES } from '../../data/content';
+import { metropolisProbability } from '../../lib/algorithms/hybridSa2Opt';
 import { formatId, mulberry32 } from '../../lib/algorithms/rng';
-import { SaMountainPhysicsCanvas } from '../ui/AnimatedCanvases';
+import {
+  MetropolisDecisionCanvas,
+  SaMountainPhysicsCanvas,
+} from '../ui/AnimatedCanvases';
 import { CoachMissionBanner, CoachTarget } from '../ui/GuidedCoach';
+import { QuizCard } from '../ui/QuizCard';
 import { Tex } from '../ui/Tex';
 
 interface Scene02Props {
   beat?: number;
-  exploreAll?: boolean;
 }
 
-export function Scene02SaFundamentals({ beat = 0, exploreAll = false }: Scene02Props) {
+export function Scene02SaFundamentals({ beat = 0 }: Scene02Props) {
   const [coolingMode, setCoolingMode] = useState<'gradual' | 'fast'>('gradual');
   const [replayKey, setReplayKey] = useState(1);
 
-  // Beat 1 guided state (Langkah 1: Dingin -> Langkah 2: Panas -> Langkah 3: Lempar Dadu)
+  // Beat 1: Eksperimen Nyata Metropolis + Animasi Pendinginan Langsung di Kurva
   const [temperature, setTemperature] = useState(10);
   const [deltaE, setDeltaE] = useState(4);
   const [rollSeed, setRollSeed] = useState(1);
   const [lastRoll, setLastRoll] = useState<number | null>(null);
+  const [rollSeq, setRollSeq] = useState(0);
+  const [coolingAnim, setCoolingAnim] = useState(false);
   const [coachStage, setCoachStage] = useState<0 | 1 | 2 | 3>(0);
+  const coolTimerRef = useRef<number | null>(null);
 
   const prob = metropolisProbability(deltaE, temperature);
-  const accepted = lastRoll !== null ? lastRoll < prob : null;
 
-  const handleDiceRoll = () => {
-    const rng = mulberry32(rollSeed * 7919 + Math.round(temperature * 10));
+  const stopCoolingAnim = () => {
+    if (coolTimerRef.current !== null) {
+      window.clearInterval(coolTimerRef.current);
+      coolTimerRef.current = null;
+    }
+    setCoolingAnim(false);
+  };
+
+  useEffect(() => () => stopCoolingAnim(), []);
+
+  const handleTestDecision = () => {
+    stopCoolingAnim();
+    const rng = mulberry32(rollSeed * 7919 + Math.round(temperature * 10) + Math.round(deltaE * 13));
     const r = Math.round(rng() * 1000) / 1000;
     setLastRoll(r);
     setRollSeed((s) => s + 1);
-    setCoachStage(3);
+    setRollSeq((q) => q + 1);
+    if (coachStage === 0) setCoachStage(1);
+  };
+
+  const handleSimulateCooling = () => {
+    stopCoolingAnim();
+    setCoolingAnim(true);
+    setTemperature(25);
+    setLastRoll(null);
+    let currentT = 25;
+    coolTimerRef.current = window.setInterval(() => {
+      currentT = Math.max(0.8, Number((currentT * 0.87).toFixed(1)));
+      setTemperature(currentT);
+      if (currentT <= 1.0) {
+        stopCoolingAnim();
+        setCoachStage(3);
+      }
+    }, 150);
   };
 
   const curvePath = useMemo(() => {
     const pts: string[] = [];
     for (let i = 0; i <= 50; i++) {
-      const tVal = 0.2 + (i / 50) * 24.8;
+      const tVal = 0.5 + (i / 50) * 24.5;
       const pVal = metropolisProbability(deltaE, tVal);
-      const x = 36 + (tVal / 25) * 270;
-      const y = 114 - pVal * 94;
+      const x = 44 + (tVal / 25) * 258;
+      const y = 122 - pVal * 92;
       pts.push(`${i === 0 ? 'M' : 'L'}${x.toFixed(1)} ${y.toFixed(1)}`);
     }
     return pts.join(' ');
   }, [deltaE]);
 
-  const activeX = 36 + (Math.min(25, temperature) / 25) * 270;
-  const activeY = 114 - prob * 94;
-
-  const coolingRate = coolingMode === 'gradual' ? 0.9 : 0.55;
-  const t1 = coolTemperature(100, coolingRate);
-  const t2 = coolTemperature(t1, coolingRate);
-  const t3 = coolTemperature(t2, coolingRate);
-
-  const showBeat0 = exploreAll || beat === 0;
-  const showBeat1 = exploreAll || beat === 1;
+  const activeX = 44 + (Math.min(25, temperature) / 25) * 258;
+  const activeY = 122 - prob * 92;
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* BEAT 0: Animasi Fisika 60fps Bola SA Melompati Bukit */}
-      {showBeat0 && (
+    <div className="flex flex-col gap-5">
+      {/* BAGIAN 1: Animasi Fisika 60fps Pegunungan SA + Termometer Suhu */}
+      {beat === 0 && (
         <div className="grid grid-cols-1 items-center gap-5 lg:grid-cols-[1fr_1.15fr]">
           <div className="flex flex-col gap-3.5">
             <h2 className="font-display text-2xl font-extrabold leading-tight sm:text-3xl">
@@ -69,34 +92,33 @@ export function Scene02SaFundamentals({ beat = 0, exploreAll = false }: Scene02P
               <span style={{ color: 'var(--sa-heat)' }}>panas untuk melompat</span>, dingin untuk
               mengunci.
             </h2>
-            <p className="m-0 text-sm leading-relaxed text-[var(--ink-secondary)]">
-              Terinspirasi dari pendinginan logam (Kirkpatrick dkk., 1983). Perhatikan animasi bola
-              di kanan: pencarian biasa langsung macet di lembah dangkal, sedangkan SA berani
-              menerima langkah naik sementara agar lolos ke lembah terdalam.
-            </p>
 
-            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-              <div className="studio-panel p-3">
-                <div className="text-xs font-bold" style={{ color: 'var(--sa-heat)' }}>
-                  Kriteria Metropolis
-                </div>
-                <Tex math="P = e^{-\Delta E / T}" block className="my-1" />
-                <p className="m-0 text-xs text-[var(--ink-secondary)]">
-                  Bila beban naik (<Tex math="\Delta E > 0" />), diterima jika <Tex math="r < P" />.
-                </p>
-              </div>
-              <div className="studio-panel p-3">
-                <div className="text-xs font-bold" style={{ color: 'var(--opt-cyan)' }}>
-                  Jadwal Pendinginan
-                </div>
-                <Tex math="T_{\text{baru}} = r \cdot T_{\text{lama}}" block className="my-1" />
-                <p className="m-0 text-xs text-[var(--ink-secondary)]">
-                  Suhu turun bertahap tiap outer loop (<Tex math="r = 0{,}9" />).
-                </p>
-              </div>
+            <div className="studio-panel flex flex-col gap-2 p-3.5 text-sm">
+              <p className="m-0 leading-relaxed text-[var(--ink-secondary)]">
+                <strong className="text-[var(--ink-primary)]">Bayangkan mencari lembah terdalam</strong>{' '}
+                (Makespan terkecil = 9 detik):
+              </p>
+              <ul className="m-0 flex list-disc flex-col gap-1.5 pl-4 text-xs leading-relaxed text-[var(--ink-secondary)]">
+                <li>
+                  <strong className="text-[var(--ink-primary)]">Algoritma Biasa (Greedy):</strong>{' '}
+                  hanya mau menerima langkah yang lebih baik → langsung{' '}
+                  <strong style={{ color: 'var(--sa-heat)' }}>terjebak di lembah sempit 14 dtk</strong>.
+                </li>
+                <li>
+                  <strong style={{ color: 'var(--sa-heat)' }}>Simulated Annealing (SA):</strong>{' '}
+                  terinspirasi pendinginan logam (Kirkpatrick dkk., 1983). Saat{' '}
+                  <strong className="text-[var(--ink-primary)]">Suhu T masih Panas</strong>, SA berani
+                  melompat naik sementara demi menemukan lembah terdalam 9 dtk!
+                </li>
+                <li>
+                  <strong style={{ color: 'var(--opt-cyan)' }}>Pendinginan (T = r × T):</strong>{' '}
+                  suhu diturunkan pelan-pelan agar di akhir pencarian SA tidak melompat lagi dan
+                  mengunci hasil terbaik.
+                </li>
+              </ul>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 pt-1">
+            <div className="flex flex-wrap items-center gap-2 pt-1 pb-6">
               <CoachTarget
                 active={coolingMode === 'gradual'}
                 label="Coba lihat jika terlalu cepat dingin!"
@@ -113,8 +135,8 @@ export function Scene02SaFundamentals({ beat = 0, exploreAll = false }: Scene02P
                   }`}
                 >
                   {coolingMode === 'gradual'
-                    ? 'Uji Pendinginan Terlalu Cepat (r=0,55)'
-                    : 'Kembalikan Pendinginan Bertahap (r=0,90)'}
+                    ? 'Uji Pendinginan Terlalu Cepat (r = 0,55)'
+                    : 'Kembalikan Pendinginan Bertahap (r = 0,90)'}
                 </button>
               </CoachTarget>
               <button
@@ -129,81 +151,88 @@ export function Scene02SaFundamentals({ beat = 0, exploreAll = false }: Scene02P
 
           <div className="flex flex-col gap-2">
             <SaMountainPhysicsCanvas coolingMode={coolingMode} replayKey={replayKey} />
-            <div className="flex items-center justify-between px-1 text-xs text-[var(--ink-secondary)]">
-              <span>Bola abu-abu: Greedy biasa (cepat terjebak)</span>
-              <span style={{ color: 'var(--sa-heat)' }}>
-                Bola oranye: SA ({coolingMode === 'gradual' ? 'Bertahap → Lolos!' : 'Cepat → Beku!'})
+            <div className="flex flex-wrap items-center justify-between gap-2 px-1 text-xs text-[var(--ink-secondary)]">
+              <span>Bola abu-abu: Greedy biasa (macet di 14 dtk)</span>
+              <span className="font-bold" style={{ color: 'var(--sa-heat)' }}>
+                Bola oranye: SA ({coolingMode === 'gradual' ? 'Pelan → Lolos ke 9 dtk!' : 'Terlalu cepat → Beku di 14 dtk!'})
               </span>
             </div>
           </div>
         </div>
       )}
 
-      {/* BEAT 1: Lab Termostat Metropolis Interaktif + Pemandu 3 Langkah */}
-      {showBeat1 && (
-        <div className="flex flex-col gap-3.5">
+      {/* BAGIAN 2: Eksperimen Nyata Keputusan SA (Meteran Zona Hijau/Merah + Animasi Pendinginan di Grafik) */}
+      {beat === 1 && (
+        <div className="flex flex-col gap-3">
           <CoachMissionBanner
-            stepLabel={`Pemandu · Langkah ${Math.min(coachStage + 1, 3)} / 3`}
+            stepLabel={`Eksperimen SA · Langkah ${Math.min(coachStage + 1, 3)} / 3`}
             instruction={
               coachStage === 0
-                ? 'Langkah 1: Klik tombol "Dingin (T=1)" untuk melihat betapa kecil peluang SA menerima solusi buruk saat dingin.'
+                ? 'Langkah 1: Saat Suhu Panas (T=10), Zona Hijau lebar (67%). Klik "Uji Keputusan SA" untuk melempar jarum acak dan lihat apakah jadwal lebih lambat (+4s) diterima!'
                 : coachStage === 1
-                  ? 'Langkah 2: Sekarang klik "Panas (T=10)"! Lihat peluang penerimaan melonjak dari 1,8% ke 67,0%.'
-                  : 'Langkah 3: Klik "Lempar Dadu r" untuk mensimulasikan keputusan Metropolis menerima atau menolak langkah mundur.'
+                  ? 'Langkah 2: Sekarang klik "Akhir: Dingin (T=1)"! Lihat Zona Hijau langsung menyusut habis jadi 1,8% karena SA mulai ketat.'
+                  : 'Langkah 3: Klik "▶ Simulasikan Pendinginan" di kanan untuk menonton titik kuning meluncur dari Panas (kanan) ke Dingin (kiri) sambil Zona Hijau mengecil!'
             }
             completed={coachStage === 3}
-            doneMessage="Keren! Kamu sudah paham inti Simulated Annealing. Kamu bebas menggeser slider Suhu T dan ΔE sepuasnya."
+            doneMessage="Sekarang jelas kan! Makin panas Suhu T → Zona Hijau makin lebar (berani eksplorasi). Makin dingin → Zona Hijau habis (mengunci jawaban terbaik)."
           />
 
-          <div className="mt-2 grid grid-cols-1 gap-4 lg:grid-cols-[1.25fr_1fr]">
-            <div className="studio-panel flex flex-col gap-3.5 p-4 pt-6">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="text-xs font-bold text-[var(--ink-secondary)]">
-                  Termostat Metropolis Interaktif
-                </span>
-                <div className="flex flex-wrap items-center gap-2">
-                  <CoachTarget active={coachStage === 0} label="Klik 1: Suhu Dingin" position="top" align="center">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setTemperature(1);
-                        setDeltaE(4);
-                        if (coachStage === 0) setCoachStage(1);
-                      }}
-                      className="btn-studio !min-h-[36px] !px-3 !py-1 text-xs"
-                      style={{
-                        borderColor: 'var(--opt-cyan)',
-                        color: 'var(--opt-cyan)',
-                      }}
-                    >
-                      Dingin (T=1)
-                    </button>
-                  </CoachTarget>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.22fr_1fr]">
+            {/* Kiri: Animasi Meteran Zona Hijau/Merah + Kontrol Nyata */}
+            <div className="studio-panel flex flex-col gap-3 p-4">
+              <MetropolisDecisionCanvas
+                temperature={temperature}
+                deltaE={deltaE}
+                prob={prob}
+                rollValue={lastRoll}
+                rollSeq={rollSeq}
+              />
 
-                  <CoachTarget active={coachStage === 1} label="Klik 2: Suhu Panas" position="top" align="end">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setTemperature(10);
-                        setDeltaE(4);
-                        if (coachStage <= 1) setCoachStage(2);
-                      }}
-                      className="btn-studio !min-h-[36px] !px-3 !py-1 text-xs"
-                      style={{
-                        borderColor: 'var(--sa-heat)',
-                        color: 'var(--sa-heat)',
-                      }}
-                    >
-                      Panas (T=10)
-                    </button>
-                  </CoachTarget>
-                </div>
+              <div className="flex flex-wrap items-center gap-2 pt-1 pb-5">
+                <CoachTarget active={coachStage === 0} label="Klik 1: Lempar jarum!" position="bottom">
+                  <button
+                    type="button"
+                    onClick={handleTestDecision}
+                    className="btn-studio btn-studio-gold text-xs"
+                  >
+                    Uji Keputusan SA (Lempar Jarum)
+                  </button>
+                </CoachTarget>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    stopCoolingAnim();
+                    setTemperature(10);
+                    setDeltaE(4);
+                  }}
+                  className="btn-studio !min-h-[38px] text-xs"
+                  style={{ borderColor: 'var(--sa-heat)', color: 'var(--sa-heat)' }}
+                >
+                  Awal: Panas (T=10)
+                </button>
+
+                <CoachTarget active={coachStage === 1} label="Klik 2: Coba dingin!" position="bottom">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      stopCoolingAnim();
+                      setTemperature(1);
+                      setDeltaE(4);
+                      if (coachStage <= 1) setCoachStage(2);
+                    }}
+                    className="btn-studio !min-h-[38px] text-xs"
+                    style={{ borderColor: 'var(--opt-cyan)', color: 'var(--opt-cyan)' }}
+                  >
+                    Akhir: Dingin (T=1)
+                  </button>
+                </CoachTarget>
               </div>
 
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-3 border-t border-[var(--border-line)] pt-2.5 sm:grid-cols-2">
                 <label className="flex flex-col gap-1 text-xs font-bold">
                   <span className="flex justify-between">
-                    <span>Suhu (T)</span>
+                    <span>Atur Suhu T (Dingin ↔ Panas)</span>
                     <span className="font-mono-tabular" style={{ color: 'var(--sa-heat)' }}>
                       {formatId(temperature, 1)}
                     </span>
@@ -214,15 +243,18 @@ export function Scene02SaFundamentals({ beat = 0, exploreAll = false }: Scene02P
                     max={25}
                     step={0.5}
                     value={temperature}
-                    onChange={(e) => setTemperature(Number(e.target.value))}
+                    onChange={(e) => {
+                      stopCoolingAnim();
+                      setTemperature(Number(e.target.value));
+                    }}
                     className="studio-range w-full"
                   />
                 </label>
 
                 <label className="flex flex-col gap-1 text-xs font-bold">
                   <span className="flex justify-between">
-                    <span>Kenaikan Beban (ΔE)</span>
-                    <span className="font-mono-tabular">+{formatId(deltaE, 1)} s</span>
+                    <span>Seberapa Lebih Lambat (ΔE)</span>
+                    <span className="font-mono-tabular">+{formatId(deltaE, 1)} dtk</span>
                   </span>
                   <input
                     type="range"
@@ -235,26 +267,58 @@ export function Scene02SaFundamentals({ beat = 0, exploreAll = false }: Scene02P
                   />
                 </label>
               </div>
+            </div>
 
-              <div className="grid grid-cols-1 items-center gap-3 sm:grid-cols-[1.25fr_1fr]">
+            {/* Kanan: Grafik Kurva + Panduan Cara Baca Eksplisit + Tombol Animasi Pendinginan */}
+            <div className="studio-panel flex flex-col justify-between gap-3 p-4 pb-8">
+              <div className="flex flex-col gap-2">
+                <div className="text-xs font-bold text-[var(--ink-primary)]">
+                  Cara Baca Grafik Peluang SA (Metropolis)
+                </div>
+                <div className="rounded-xl bg-[var(--bg-inset)] px-3 py-2 text-xs leading-relaxed text-[var(--ink-secondary)]">
+                  <strong style={{ color: 'var(--sa-heat)' }}>Makin ke KANAN</strong> = Suhu T makin
+                  panas → garis <strong className="text-[var(--ink-primary)]">NAIK</strong> (peluang
+                  terima besar).{' '}
+                  <strong style={{ color: 'var(--opt-cyan)' }}>Makin ke KIRI</strong> = Suhu T makin
+                  dingin → garis <strong className="text-[var(--ink-primary)]">TURUN ke 0%</strong>{' '}
+                  (SA hanya terima jadwal lebih cepat).
+                </div>
+
                 <svg
-                  viewBox="0 0 320 132"
+                  viewBox="0 0 320 148"
                   className="w-full rounded-xl border border-[var(--border-line)] bg-[var(--bg-stage)]"
                   role="img"
-                  aria-label="Kurva probabilitas penerimaan Metropolis terhadap suhu T"
+                  aria-label="Grafik hubungan Suhu T dengan peluang menerima jadwal lebih buruk"
                 >
-                  <line x1="36" y1="20" x2="36" y2="114" stroke="var(--border-line)" />
-                  <line x1="36" y1="114" x2="306" y2="114" stroke="var(--border-line)" />
-                  <text x="30" y="24" textAnchor="end" fontSize="10" fill="var(--ink-secondary)">
+                  {/* Garis grid horizontal */}
+                  <line x1="44" y1="30" x2="304" y2="30" stroke="var(--border-line)" strokeDasharray="3 3" />
+                  <line x1="44" y1="76" x2="304" y2="76" stroke="var(--border-line)" strokeDasharray="3 3" />
+                  <line x1="44" y1="30" x2="44" y2="122" stroke="var(--border-strong)" />
+                  <line x1="44" y1="122" x2="304" y2="122" stroke="var(--border-strong)" />
+
+                  {/* Label sumbu-Y */}
+                  <text x="38" y="34" textAnchor="end" fontSize="10" fill="var(--ink-secondary)">
                     100%
                   </text>
-                  <text x="30" y="116" textAnchor="end" fontSize="10" fill="var(--ink-secondary)">
+                  <text x="38" y="80" textAnchor="end" fontSize="10" fill="var(--ink-secondary)">
+                    50%
+                  </text>
+                  <text x="38" y="125" textAnchor="end" fontSize="10" fill="var(--ink-secondary)">
                     0%
                   </text>
-                  <text x="170" y="128" textAnchor="middle" fontSize="10" fill="var(--ink-secondary)">
-                    Suhu T (0,5 sampai 25)
+
+                  {/* Label sumbu-X awam */}
+                  <text x="48" y="139" textAnchor="start" fontSize="9.5" fontWeight="700" fill="var(--opt-cyan)">
+                    ← Dingin (T=1)
+                  </text>
+                  <text x="174" y="139" textAnchor="middle" fontSize="9.5" fill="var(--ink-secondary)">
+                    Suhu T
+                  </text>
+                  <text x="302" y="139" textAnchor="end" fontSize="9.5" fontWeight="700" fill="var(--sa-heat)">
+                    Panas (T=25) →
                   </text>
 
+                  {/* Kurva eksponensial */}
                   <path
                     d={curvePath}
                     fill="none"
@@ -262,11 +326,21 @@ export function Scene02SaFundamentals({ beat = 0, exploreAll = false }: Scene02P
                     strokeWidth="3.2"
                     strokeLinecap="round"
                   />
+
+                  {/* Proyeksi titik aktif */}
                   <line
                     x1={activeX}
                     y1={activeY}
                     x2={activeX}
-                    y2="114"
+                    y2="122"
+                    stroke="var(--coach-gold)"
+                    strokeDasharray="3 3"
+                  />
+                  <line
+                    x1="44"
+                    y1={activeY}
+                    x2={activeX}
+                    y2={activeY}
                     stroke="var(--coach-gold)"
                     strokeDasharray="3 3"
                   />
@@ -278,124 +352,52 @@ export function Scene02SaFundamentals({ beat = 0, exploreAll = false }: Scene02P
                     stroke="var(--bg-stage)"
                     strokeWidth="2.5"
                   />
+
+                  {/* Anotasi angka langsung di grafik */}
+                  <text
+                    x={Math.min(200, Math.max(50, activeX - 42))}
+                    y={Math.max(16, activeY - 14)}
+                    fontSize="10.5"
+                    fontWeight="800"
+                    fontFamily="var(--font-mono)"
+                    fill="var(--gold-text)"
+                  >
+                    T={formatId(temperature, 1)} → {formatId(prob * 100, 1)}%
+                  </text>
                 </svg>
-
-                <div className="flex flex-col gap-2">
-                  <div className="rounded-xl border border-[var(--border-line)] bg-[var(--bg-inset)] p-2.5 text-center">
-                    <div className="text-[11px] font-semibold text-[var(--ink-secondary)]">
-                      Peluang Terima Buruk (P)
-                    </div>
-                    <div
-                      className="font-mono-tabular text-2xl font-extrabold"
-                      style={{ color: 'var(--sa-heat)' }}
-                    >
-                      {formatId(prob * 100, 1)}%
-                    </div>
-                  </div>
-
-                  <CoachTarget active={coachStage === 2} label="Klik 3: Uji Dadu!" position="bottom" className="w-full">
-                    <button
-                      type="button"
-                      onClick={handleDiceRoll}
-                      className="btn-studio btn-studio-heat w-full text-xs"
-                    >
-                      Lempar Dadu r (0..1)
-                    </button>
-                  </CoachTarget>
-
-                  {lastRoll !== null && (
-                    <div
-                      role="status"
-                      aria-live="polite"
-                      className="font-mono-tabular rounded-xl border px-2.5 py-1.5 text-center text-xs font-bold"
-                      style={{
-                        borderColor: accepted ? 'var(--ok-mint)' : 'var(--sa-heat)',
-                        backgroundColor: accepted ? 'var(--ok-mint-soft)' : 'var(--sa-heat-soft)',
-                        color: accepted ? 'var(--ok-mint)' : 'var(--sa-heat)',
-                      }}
-                    >
-                      r = {formatId(lastRoll, 2)} {accepted ? '<' : '≥'} P = {formatId(prob, 2)} ·{' '}
-                      {accepted ? 'DITERIMA' : 'DITOLAK'}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="studio-panel flex flex-col justify-between gap-3 p-4">
-              <div className="flex flex-col gap-2">
-                <span className="text-xs font-bold text-[var(--ink-secondary)]">
-                  Penurunan Suhu Bertahap vs Cepat
-                </span>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setCoolingMode('gradual')}
-                    className="min-h-[42px] rounded-xl border px-2.5 py-1.5 text-xs font-bold"
-                    style={{
-                      borderColor:
-                        coolingMode === 'gradual' ? 'var(--ok-mint)' : 'var(--border-line)',
-                      backgroundColor:
-                        coolingMode === 'gradual' ? 'var(--ok-mint-soft)' : 'var(--bg-inset)',
-                      color: coolingMode === 'gradual' ? 'var(--ok-mint)' : 'var(--ink-primary)',
-                    }}
-                  >
-                    Bertahap (r = 0,90)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCoolingMode('fast')}
-                    className="min-h-[42px] rounded-xl border px-2.5 py-1.5 text-xs font-bold"
-                    style={{
-                      borderColor:
-                        coolingMode === 'fast' ? 'var(--sa-heat)' : 'var(--border-line)',
-                      backgroundColor:
-                        coolingMode === 'fast' ? 'var(--sa-heat-soft)' : 'var(--bg-inset)',
-                      color: coolingMode === 'fast' ? 'var(--sa-heat)' : 'var(--ink-primary)',
-                    }}
-                  >
-                    Terlalu Cepat (r = 0,55)
-                  </button>
-                </div>
               </div>
 
               <div className="flex flex-col gap-2">
-                {[
-                  { label: 'T₀ (Awal)', val: 100 },
-                  { label: 'T₁', val: t1 },
-                  { label: 'T₂', val: t2 },
-                  { label: 'T₃', val: t3 },
-                ].map((step) => (
-                  <div
-                    key={step.label}
-                    className="grid grid-cols-[72px_1fr_54px] items-center gap-2"
-                  >
-                    <span className="font-mono-tabular text-xs font-bold">{step.label}</span>
-                    <div className="h-3.5 overflow-hidden rounded-full bg-[var(--bg-inset)]">
-                      <div
-                        className="h-full rounded-full transition-all duration-300"
-                        style={{
-                          width: `${step.val}%`,
-                          backgroundColor: step.val > 50 ? 'var(--sa-heat)' : 'var(--opt-cyan)',
-                        }}
-                      />
-                    </div>
-                    <span className="font-mono-tabular text-right text-xs font-bold">
-                      {formatId(step.val, 1)}
-                    </span>
-                  </div>
-                ))}
-              </div>
+                <div className="flex items-center justify-between rounded-xl border border-[var(--border-line)] bg-[var(--bg-inset)] px-3 py-1.5 text-xs">
+                  <span className="font-semibold text-[var(--ink-secondary)]">Rumus singkat:</span>
+                  <Tex math="P = e^{-\Delta E / T},\;\; T_{\text{baru}} = 0{,}9 \cdot T" />
+                </div>
 
-              <p className="m-0 rounded-xl bg-[var(--bg-inset)] p-3 text-xs leading-relaxed text-[var(--ink-secondary)]">
-                {coolingMode === 'gradual'
-                  ? 'Pendinginan bertahap memberi cukup waktu eksplorasi sebelum mengunci solusi. Namun di tahap akhir, SA murni masih lambat memoles detail beban tanpa 2-Opt.'
-                  : 'Pendinginan terlalu cepat membuat suhu anjlok dalam 3 langkah. SA segera berhenti menerima langkah mundur dan rawan terjebak di local optimum.'}
-              </p>
+                <CoachTarget
+                  active={coachStage === 2}
+                  label="Klik 3: Tonton pendinginan!"
+                  position="bottom"
+                  className="w-full"
+                >
+                  <button
+                    type="button"
+                    onClick={handleSimulateCooling}
+                    disabled={coolingAnim}
+                    className="btn-studio btn-studio-cyan w-full text-xs"
+                  >
+                    {coolingAnim
+                      ? `Sedang Mendingin... T = ${formatId(temperature, 1)}`
+                      : '▶ Simulasikan Pendinginan (T: 25 → 1)'}
+                  </button>
+                </CoachTarget>
+              </div>
             </div>
           </div>
         </div>
       )}
+
+      {/* BAGIAN 3: Cek Paham 2/3 di sela materi sebelum masuk Episode 3 (2-Opt) */}
+      {beat === 2 && <QuizCard quiz={QUIZZES.q2} nextLabel="Lanjut ke Episode 3: Dasar 2-Opt →" />}
     </div>
   );
 }

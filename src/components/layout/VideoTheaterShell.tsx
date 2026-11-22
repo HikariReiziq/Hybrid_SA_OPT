@@ -7,10 +7,10 @@ interface VideoTheaterShellProps {
 }
 
 /**
- * Kerangka pemutar "Film Animasi Interaktif" bergaya video player modern:
- * - Panggung widescreen tanpa kotak slide bergaris hitam ala presentasi statis.
- * - Subtitle narasi sinematik di bagian bawah panggung.
- * - Timeline chapter scrubbable (Ep 1 s.d. Ep 5) + tombol Putar Otomatis / Jeda.
+ * Kerangka pemutar presentasi animasi interaktif:
+ * - Panggung widescreen modern dengan subtitle narasi di bawah.
+ * - Scrubber timeline chapter (Ep 1 s.d. Ep 5) dengan penanda Cek Paham di sela materi.
+ * - Kontrol Putar Otomatis / Jeda, Mundur, Lanjut, dan pintasan keyboard.
  */
 export function VideoTheaterShell({ children }: VideoTheaterShellProps) {
   const sceneIndex = usePresentationStore((s) => s.sceneIndex);
@@ -26,29 +26,29 @@ export function VideoTheaterShell({ children }: VideoTheaterShellProps) {
 
   const scene = SCENES[sceneIndex];
   const caption = scene.beats[beatIndex] ?? '';
-  const durationMs = scene.beatDurationMs[beatIndex] ?? 10000;
+  const beatLabel = scene.beatLabels[beatIndex] ?? `Bagian ${beatIndex + 1}`;
+  const durationMs = scene.beatDurationMs[beatIndex] ?? 12000;
 
   const isFirst = sceneIndex === 0 && beatIndex === 0;
   const isLast = sceneIndex === SCENES.length - 1 && beatIndex === scene.beats.length - 1;
 
-  // Flat list semua chapter-beat untuk scrubber bergaya YouTube
   const timelineSlots = SCENES.flatMap((sc, sIdx) =>
     sc.beats.map((_, bIdx) => ({
       sIdx,
       bIdx,
-      label: `Ep ${sIdx + 1} · Bagian ${bIdx + 1}`,
+      label: `Ep ${sIdx + 1} · ${sc.beatLabels[bIdx] ?? `Bagian ${bIdx + 1}`}`,
+      isQuiz: (sc.beatLabels[bIdx] ?? '').includes('Cek Paham'),
     })),
   );
   const activeSlotIdx =
     SCENES.slice(0, sceneIndex).reduce((sum, sc) => sum + sc.beats.length, 0) + beatIndex;
 
-  // Estimasi stempel waktu presentasi 8 menit (480 detik)
-  const estSec = Math.round(((activeSlotIdx + 1) / timelineSlots.length) * 480);
+  // Estimasi stempel waktu presentasi ~10 menit (600 detik)
+  const estSec = Math.round(((activeSlotIdx + 1) / timelineSlots.length) * 600);
   const estTimeStr = `${String(Math.floor(estSec / 60)).padStart(2, '0')}:${String(
     estSec % 60,
   ).padStart(2, '0')}`;
 
-  // Keyboard navigation
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
@@ -71,7 +71,6 @@ export function VideoTheaterShell({ children }: VideoTheaterShellProps) {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [nextStep, prevStep, toggleAutoPlay, setAutoPlay]);
 
-  // Auto-play timer (berjalan layaknya pemutar video animasi)
   useEffect(() => {
     setBeatProgress(0);
     if (!autoPlay) return;
@@ -95,13 +94,11 @@ export function VideoTheaterShell({ children }: VideoTheaterShellProps) {
 
   return (
     <div className="mx-auto flex w-full max-w-[1320px] flex-1 flex-col gap-3 px-3 py-3 sm:px-5 sm:py-4">
-      {/* Panggung Teater Film Interaktif */}
       <main
         key={`${scene.id}-${beatIndex}`}
         className="theater-stage stage-enter flex flex-1 flex-col justify-between gap-4 p-4 sm:p-6 md:p-7"
         aria-label={`Episode ${sceneIndex + 1}: ${scene.shortTitle}`}
       >
-        {/* Info Episode Minimalis di Pojok Atas */}
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2.5 text-xs font-bold text-[var(--ink-secondary)]">
             <span
@@ -114,20 +111,18 @@ export function VideoTheaterShell({ children }: VideoTheaterShellProps) {
               Episode {sceneIndex + 1} / 5
             </span>
             <span>{scene.shortTitle}</span>
-            <span className="font-mono-tabular opacity-75">· {scene.minutes}</span>
+            <span className="font-mono-tabular opacity-80">· {beatLabel}</span>
           </div>
 
           <div className="font-mono-tabular text-xs font-semibold text-[var(--ink-secondary)]">
-            Adegan {beatIndex + 1} dari {scene.beats.length}
+            Bagian {beatIndex + 1} dari {scene.beats.length} · Est. {scene.minutes}
           </div>
         </div>
 
-        {/* Area Animasi & Interaksi */}
         <div className="flex flex-1 flex-col justify-center">{children}</div>
 
-        {/* Subtitle Narasi Gaya Film Dokumenter (1-satunya elemen translucent di halaman) */}
         <div
-          className="rounded-xl border px-4 py-2.5 backdrop-blur-sm"
+          className="rounded-xl border px-4 py-2.5"
           style={{
             borderColor: 'var(--border-line)',
             backgroundColor: 'var(--bg-panel)',
@@ -139,9 +134,8 @@ export function VideoTheaterShell({ children }: VideoTheaterShellProps) {
         </div>
       </main>
 
-      {/* Bilah Pemutar Video (Timeline Chapters + Play/Pause Auto-Demo + Prev/Next) */}
       <footer className="studio-panel flex flex-col gap-2.5 px-4 py-3">
-        {/* Segmented Chapter Scrubber */}
+        {/* Segmented Chapter Scrubber dengan area klik lebih lega */}
         <div className="flex items-center gap-1" role="group" aria-label="Timeline episode">
           {timelineSlots.map((slot, idx) => {
             const isPast = idx < activeSlotIdx;
@@ -157,15 +151,21 @@ export function VideoTheaterShell({ children }: VideoTheaterShellProps) {
                   setAutoPlay(false);
                   setScene(slot.sIdx, slot.bIdx);
                 }}
-                className="group relative h-3 flex-1 overflow-hidden rounded-full bg-[var(--bg-inset)]"
+                className="group relative flex flex-1 items-center py-2"
               >
-                <span
-                  className="block h-full rounded-full transition-all duration-150"
-                  style={{
-                    width: isPast ? '100%' : isActive ? `${autoPlay ? beatProgress : 100}%` : '0%',
-                    backgroundColor: isActive ? 'var(--coach-gold)' : 'var(--opt-cyan)',
-                  }}
-                />
+                <span className="block h-2.5 w-full overflow-hidden rounded-full bg-[var(--bg-inset)]">
+                  <span
+                    className="block h-full rounded-full transition-all duration-150"
+                    style={{
+                      width: isPast ? '100%' : isActive ? `${autoPlay ? beatProgress : 100}%` : '0%',
+                      backgroundColor: isActive
+                        ? 'var(--coach-gold)'
+                        : slot.isQuiz
+                          ? 'var(--ok-mint)'
+                          : 'var(--opt-cyan)',
+                    }}
+                  />
+                </span>
               </button>
             );
           })}
@@ -209,11 +209,9 @@ export function VideoTheaterShell({ children }: VideoTheaterShellProps) {
           </div>
 
           <div className="font-mono-tabular flex items-center gap-3 text-xs text-[var(--ink-secondary)]">
-            <span>
-              {estTimeStr} / 08:00
-            </span>
+            <span>{estTimeStr} / 10:00</span>
             <span className="hidden sm:inline">
-              Spasi: Putar/Jeda · Panah ← / →: Pindah adegan
+              Spasi: Putar/Jeda · Panah ← / →: Pindah bagian
             </span>
           </div>
         </div>

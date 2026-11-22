@@ -6,7 +6,6 @@ import { Scene02SaFundamentals } from './components/scenes/Scene02SaFundamentals
 import { Scene03TwoOptBridge } from './components/scenes/Scene03TwoOptBridge';
 import { Scene04HybridRace } from './components/scenes/Scene04HybridRace';
 import { Scene05CompareClosing } from './components/scenes/Scene05CompareClosing';
-import { SCENES } from './data/content';
 import { usePresentationStore } from './store/presentationStore';
 
 function ActiveEpisodeScene({ sceneIndex, beatIndex }: { sceneIndex: number; beatIndex: number }) {
@@ -42,49 +41,13 @@ export function App() {
       <TopBar />
 
       <div id="main-content" className="flex flex-1 flex-col">
-        {viewMode === 'video' && (
+        {viewMode === 'video' ? (
           <VideoTheaterShell>
             <ActiveEpisodeScene sceneIndex={sceneIndex} beatIndex={beatIndex} />
           </VideoTheaterShell>
+        ) : (
+          <SandboxView />
         )}
-
-        {viewMode === 'explore' && (
-          <main className="mx-auto flex w-full max-w-[1200px] flex-1 flex-col gap-10 px-3 py-6 sm:px-5 sm:py-8">
-            {SCENES.map((sc, idx) => (
-              <section
-                key={sc.id}
-                id={`scene-${sc.id}`}
-                className="theater-stage flex flex-col gap-5 p-4 sm:p-6 md:p-8"
-              >
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border-line)] pb-3">
-                  <div className="flex items-center gap-2.5">
-                    <span
-                      className="font-mono-tabular rounded-md px-2.5 py-1 text-xs font-bold"
-                      style={{
-                        backgroundColor: 'var(--opt-cyan-soft)',
-                        color: 'var(--opt-cyan)',
-                      }}
-                    >
-                      Episode {idx + 1}
-                    </span>
-                    <span className="font-display text-base font-extrabold">{sc.shortTitle}</span>
-                  </div>
-                  <span className="font-mono-tabular text-xs font-semibold text-[var(--ink-secondary)]">
-                    Estimasi: {sc.minutes}
-                  </span>
-                </div>
-
-                {idx === 0 && <Scene01ProblemWhy exploreAll />}
-                {idx === 1 && <Scene02SaFundamentals exploreAll />}
-                {idx === 2 && <Scene03TwoOptBridge exploreAll />}
-                {idx === 3 && <Scene04HybridRace exploreAll />}
-                {idx === 4 && <Scene05CompareClosing exploreAll />}
-              </section>
-            ))}
-          </main>
-        )}
-
-        {viewMode === 'sandbox' && <SandboxView />}
       </div>
     </div>
   );

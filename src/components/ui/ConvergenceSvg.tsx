@@ -14,21 +14,23 @@ interface ConvergenceSvgProps {
   xLabel: string;
   height?: number;
   title?: string;
+  readingHint?: string;
 }
 
 export function ConvergenceSvg({
   series,
   referenceLine,
   xLabel,
-  height = 170,
+  height = 175,
   title,
+  readingHint = 'Cara baca: Makin ke BAWAH = Makespan makin kecil (Makin CEPAT!)',
 }: ConvergenceSvgProps) {
   const W = 920;
   const H = height;
-  const L = 66;
+  const L = 74;
   const R = 18;
-  const T = 14;
-  const B = 32;
+  const T = 16;
+  const B = 34;
 
   const allX = series.flatMap((s) => s.points.map((p) => p.x));
   const allY = series
@@ -49,7 +51,19 @@ export function ConvergenceSvg({
   return (
     <div className="studio-panel flex flex-col gap-2 p-3.5">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        {title && <span className="text-xs font-bold text-[var(--ink-secondary)]">{title}</span>}
+        <div className="flex flex-wrap items-center gap-2">
+          {title && <span className="text-xs font-bold text-[var(--ink-primary)]">{title}</span>}
+          <span
+            className="font-mono-tabular rounded-md px-2 py-0.5 text-[11px] font-bold"
+            style={{
+              backgroundColor: 'var(--ok-mint-soft)',
+              color: 'var(--ok-mint)',
+            }}
+          >
+            ↓ {readingHint}
+          </span>
+        </div>
+
         <div className="flex flex-wrap items-center gap-3 text-xs font-semibold">
           {series.map((s) => {
             const last = s.points[s.points.length - 1];
@@ -114,6 +128,28 @@ export function ConvergenceSvg({
             </text>
           </g>
         ))}
+
+        {/* Label bantuan sumbu-Y: Lambat vs Cepat */}
+        <text
+          x={L + 6}
+          y={T + 11}
+          fill="var(--sa-heat)"
+          fontSize="10"
+          fontWeight="700"
+          fontFamily="var(--font-mono)"
+        >
+          ↑ Lebih Lambat
+        </text>
+        <text
+          x={L + 6}
+          y={H - B - 5}
+          fill="var(--ok-mint)"
+          fontSize="10"
+          fontWeight="700"
+          fontFamily="var(--font-mono)"
+        >
+          ↓ Lebih Cepat (Bagus!)
+        </text>
 
         {referenceLine && (
           <line

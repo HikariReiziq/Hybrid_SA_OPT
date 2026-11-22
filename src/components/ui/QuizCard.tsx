@@ -1,33 +1,35 @@
 import { type QuizQuestion } from '../../data/content';
 import { usePresentationStore } from '../../store/presentationStore';
-import { CoachMissionBanner } from './GuidedCoach';
+import { CoachMissionBanner, CoachTarget } from './GuidedCoach';
 
 interface QuizCardProps {
   quiz: QuizQuestion;
-  compact?: boolean;
+  nextLabel?: string;
 }
 
-export function QuizCard({ quiz, compact = false }: QuizCardProps) {
+export function QuizCard({ quiz, nextLabel = 'Lanjut ke Materi Berikutnya →' }: QuizCardProps) {
   const record = usePresentationStore((s) => s.quizzes[quiz.id]);
   const answerQuiz = usePresentationStore((s) => s.answerQuiz);
+  const nextStep = usePresentationStore((s) => s.nextStep);
+  const setAutoPlay = usePresentationStore((s) => s.setAutoPlay);
 
   const selectedOption = quiz.options.find((opt) => opt.key === record.selectedKey) ?? null;
 
   return (
-    <div
-      className={`studio-panel flex flex-col gap-3 ${compact ? 'p-4' : 'p-5 md:p-6'}`}
-      aria-label={quiz.badge}
-    >
+    <div className="studio-panel flex flex-col gap-3.5 p-5 md:p-6" aria-label={quiz.badge}>
       <CoachMissionBanner
         stepLabel={quiz.badge}
-        instruction="Pilih salah satu kartu jawaban A, B, C, atau D untuk langsung melihat pembahasannya."
+        instruction="Pilih jawaban A, B, C, atau D untuk mengecek pemahaman sebelum lanjut ke materi berikutnya."
         completed={Boolean(selectedOption?.correct)}
-        doneMessage="Mantap! Jawaban kamu benar dan poin sudah masuk ke skor akhir."
+        doneMessage="Mantap, pemahamanmu sudah pas! Klik tombol lanjut untuk masuk ke episode selanjutnya."
       />
 
-      <h3 className="font-display text-lg font-extrabold leading-snug md:text-xl">
-        {quiz.question}
-      </h3>
+      <div>
+        <div className="text-xs font-bold text-[var(--ink-secondary)]">{quiz.checkpointLabel}</div>
+        <h3 className="font-display mt-1 text-lg font-extrabold leading-snug md:text-xl">
+          {quiz.question}
+        </h3>
+      </div>
 
       <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2">
         {quiz.options.map((opt) => {
@@ -49,7 +51,7 @@ export function QuizCard({ quiz, compact = false }: QuizCardProps) {
               type="button"
               onClick={() => answerQuiz(quiz.id, opt.key, opt.correct)}
               aria-pressed={isPicked}
-              className="flex min-h-[50px] items-start gap-3 rounded-xl border-2 px-3.5 py-3 text-left transition-transform duration-150 hover:-translate-y-0.5"
+              className="flex min-h-[54px] items-start gap-3 rounded-xl border-2 px-3.5 py-3 text-left transition-transform duration-150 hover:-translate-y-0.5"
               style={{
                 borderColor: borderStyle,
                 backgroundColor: bgStyle,
@@ -75,33 +77,50 @@ export function QuizCard({ quiz, compact = false }: QuizCardProps) {
         })}
       </div>
 
-      <div
-        role="status"
-        aria-live="polite"
-        className="rounded-xl border px-3.5 py-2.5 text-sm leading-relaxed"
-        style={{
-          borderColor: selectedOption
-            ? selectedOption.correct
-              ? 'var(--ok-mint)'
-              : 'var(--sa-heat)'
-            : 'var(--border-line)',
-          backgroundColor: 'var(--bg-stage)',
-          color: 'var(--ink-secondary)',
-        }}
-      >
-        {selectedOption ? (
-          <>
-            <strong
-              style={{
-                color: selectedOption.correct ? 'var(--ok-mint)' : 'var(--sa-heat)',
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div
+          role="status"
+          aria-live="polite"
+          className="flex-1 rounded-xl border px-3.5 py-2.5 text-sm leading-relaxed"
+          style={{
+            borderColor: selectedOption
+              ? selectedOption.correct
+                ? 'var(--ok-mint)'
+                : 'var(--sa-heat)'
+              : 'var(--border-line)',
+            backgroundColor: 'var(--bg-stage)',
+            color: 'var(--ink-secondary)',
+          }}
+        >
+          {selectedOption ? (
+            <>
+              <strong
+                style={{
+                  color: selectedOption.correct ? 'var(--ok-mint)' : 'var(--sa-heat)',
+                }}
+              >
+                {selectedOption.correct ? 'Benar! ' : 'Belum tepat. '}
+              </strong>
+              <span style={{ color: 'var(--ink-primary)' }}>{selectedOption.feedback}</span>
+            </>
+          ) : (
+            'Klik salah satu opsi di atas untuk langsung melihat penjelasannya.'
+          )}
+        </div>
+
+        {selectedOption?.correct && (
+          <CoachTarget active label="Siap lanjut!" position="top" align="end">
+            <button
+              type="button"
+              onClick={() => {
+                setAutoPlay(false);
+                nextStep();
               }}
+              className="btn-studio btn-studio-gold shrink-0 text-xs"
             >
-              {selectedOption.correct ? 'Benar. ' : 'Belum tepat. '}
-            </strong>
-            <span style={{ color: 'var(--ink-primary)' }}>{selectedOption.feedback}</span>
-          </>
-        ) : (
-          'Klik salah satu opsi di atas untuk menguji pemahamanmu.'
+              {nextLabel}
+            </button>
+          </CoachTarget>
         )}
       </div>
     </div>

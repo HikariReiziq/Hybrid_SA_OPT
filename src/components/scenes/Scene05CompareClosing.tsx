@@ -3,16 +3,14 @@ import {
   type CloudSimHybridDataset,
   validateCloudSimHybridJson,
 } from '../../data/cloudsimSchema';
-import { FAIR_CHECKLIST, QUIZZES, REFERENCES } from '../../data/content';
+import { FAIR_CHECKLIST, REFERENCES } from '../../data/content';
 import { KELOMPOK4_VERIFIED_BASELINES } from '../../data/kelompok4Baselines';
 import { formatId } from '../../lib/algorithms/rng';
 import { usePresentationStore } from '../../store/presentationStore';
 import { CoachMissionBanner, CoachTarget } from '../ui/GuidedCoach';
-import { QuizCard } from '../ui/QuizCard';
 
 interface Scene05Props {
   beat?: number;
-  exploreAll?: boolean;
 }
 
 type ImportState =
@@ -21,7 +19,7 @@ type ImportState =
   | { status: 'loaded'; dataset: CloudSimHybridDataset }
   | { status: 'error'; message: string };
 
-export function Scene05CompareClosing({ beat = 0, exploreAll = false }: Scene05Props) {
+export function Scene05CompareClosing({ beat = 0 }: Scene05Props) {
   const setViewMode = usePresentationStore((s) => s.setViewMode);
   const quizzes = usePresentationStore((s) => s.quizzes);
 
@@ -132,18 +130,16 @@ export function Scene05CompareClosing({ beat = 0, exploreAll = false }: Scene05P
 
   const maxMakespan = Math.max(...displayRows.map((r) => r.makespanMean), 1);
 
-  const scoreCount = [quizzes.q1.firstAttemptCorrect, quizzes.q2.firstAttemptCorrect].filter(
-    (v) => v === true,
-  ).length;
-  const q2Done = quizzes.q2.selectedKey !== null;
-
-  const showBeat0 = exploreAll || beat === 0;
-  const showBeat1 = exploreAll || beat === 1;
+  const scoreCount = [
+    quizzes.q1.firstAttemptCorrect,
+    quizzes.q2.firstAttemptCorrect,
+    quizzes.q3.firstAttemptCorrect,
+  ].filter((v) => v === true).length;
 
   return (
     <div className="flex flex-col gap-5">
-      {/* BEAT 0: Perbandingan Fair + Slot Impor JSON CloudSim Tim */}
-      {showBeat0 && (
+      {/* BAGIAN 1: Perbandingan Fair + Cara Baca Angka + Impor JSON CloudSim */}
+      {beat === 0 && (
         <div className="flex flex-col gap-3.5">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
@@ -152,8 +148,8 @@ export function Scene05CompareClosing({ beat = 0, exploreAll = false }: Scene05P
                 <span style={{ color: 'var(--ok-mint)' }}>Hybrid vs Metode Sebelumnya</span>
               </h2>
               <p className="mt-1 text-sm text-[var(--ink-secondary)]">
-                Baseline nyata dari CloudSim Kelompok 4 (Sufferage, JAYA, SA Murni) + tombol impor
-                JSON untuk hasil simulasi Hybrid tim.
+                Baseline asli CloudSim Kelompok 4 (Sufferage, JAYA, SA Murni) + impor JSON untuk
+                hasil simulasi Hybrid tim.
               </p>
             </div>
 
@@ -181,9 +177,9 @@ export function Scene05CompareClosing({ beat = 0, exploreAll = false }: Scene05P
 
           <CoachMissionBanner
             stepLabel="Pemandu · Bandingkan Skenario"
-            instruction="Coba klik tab 'NASA Ames 750 Job × 50 VM' untuk melihat deviasi SA murni yang sangat besar dibanding skenario GoCJ."
+            instruction="Ingat cara bacanya: batang makin PENDEK = makin cepat. Coba klik 'NASA Ames 750 Job × 50 VM' untuk melihat hasil SA murni yang goyang besar!"
             completed={scenarioId === 'nasa-750x50'}
-            doneMessage="Terlihat jelas! Di NASA, variansi SA murni mencapai ±66.963 s. Begitu tim selesai simulasi CloudSim, file JSON bisa diunggah lewat tombol biru."
+            doneMessage="Terlihat jelas! Di NASA, simpangan (± std) SA murni mencapai ±66.963 s. Begitu tim selesai run CloudSim, unggah file JSON lewat tombol biru."
           />
 
           <div className="mt-4 flex flex-wrap gap-2">
@@ -217,6 +213,14 @@ export function Scene05CompareClosing({ beat = 0, exploreAll = false }: Scene05P
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.35fr_1fr]">
             <div className="studio-panel flex flex-col gap-3 p-4">
+              {/* Panduan mini cara baca metrik */}
+              <div className="rounded-xl bg-[var(--bg-inset)] px-3 py-2 text-[11px] leading-snug text-[var(--ink-secondary)]">
+                <strong className="text-[var(--ink-primary)]">Cara baca angka:</strong>{' '}
+                <strong>Makespan (s)</strong> makin kecil makin cepat ·{' '}
+                <strong>± std</strong> makin kecil makin stabil ·{' '}
+                <strong>DOI</strong> makin dekat 0 makin merata beban antar-VM.
+              </div>
+
               {importState.status === 'loading' && (
                 <div className="rounded-xl bg-[var(--bg-inset)] px-3 py-2 text-xs font-semibold">
                   Memuat berkas hasil CloudSim Hybrid...
@@ -268,7 +272,7 @@ export function Scene05CompareClosing({ beat = 0, exploreAll = false }: Scene05P
                 {displayRows.map((row) => (
                   <div
                     key={row.key}
-                    className="grid grid-cols-[140px_1fr_104px] items-center gap-2 text-xs"
+                    className="grid grid-cols-[140px_1fr_108px] items-center gap-2 text-xs"
                   >
                     <span className="truncate font-bold">{row.label}</span>
                     <div className="h-5 overflow-hidden rounded-full bg-[var(--bg-inset)]">
@@ -303,7 +307,7 @@ export function Scene05CompareClosing({ beat = 0, exploreAll = false }: Scene05P
 
             <div className="studio-panel flex flex-col gap-2.5 p-4">
               <div className="text-xs font-bold text-[var(--ink-secondary)]">
-                Checklist Eksperimen Adil (SOKA)
+                Syarat Perbandingan Ilmiah yang Adil
               </div>
               <div className="flex flex-col gap-2">
                 {FAIR_CHECKLIST.map((item) => {
@@ -342,38 +346,66 @@ export function Scene05CompareClosing({ beat = 0, exploreAll = false }: Scene05P
         </div>
       )}
 
-      {/* BEAT 1: Quiz 2/2 + Skor Akhir + Referensi + CTA Sandbox Q&A */}
-      {showBeat1 && (
+      {/* BAGIAN 2: Ringkasan Fundamental 30 Detik + Skor 3 Cek Paham + Referensi + CTA Sandbox */}
+      {beat === 1 && (
         <div className="flex flex-col gap-4">
-          <QuizCard quiz={QUIZZES.q2} compact />
+          <div>
+            <h2 className="font-display text-2xl font-extrabold sm:text-3xl">
+              Ringkasan Utama:{' '}
+              <span style={{ color: 'var(--opt-cyan)' }}>3 Hal yang Perlu Diingat</span>
+            </h2>
+            <p className="mt-1 text-sm text-[var(--ink-secondary)]">
+              Inti cara kerja Hybrid SA + 2-Opt dalam tiga kalimat sederhana sebelum masuk sesi tanya jawab:
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+            <div className="studio-panel p-4" style={{ borderColor: 'var(--sa-heat)' }}>
+              <div className="text-xs font-bold" style={{ color: 'var(--sa-heat)' }}>
+                1. Peran Simulated Annealing (SA)
+              </div>
+              <p className="m-0 mt-1.5 text-sm font-semibold leading-snug">
+                Membuka jelajah luas dengan berani menerima langkah mundur sementara saat suhu panas,
+                sehingga lolos dari jebakan local optimum.
+              </p>
+            </div>
+            <div className="studio-panel p-4" style={{ borderColor: 'var(--opt-cyan)' }}>
+              <div className="text-xs font-bold" style={{ color: 'var(--opt-cyan)' }}>
+                2. Peran 2-Opt (Local Search)
+              </div>
+              <p className="m-0 mt-1.5 text-sm font-semibold leading-snug">
+                Dipanggil di dalam tiap putaran SA (LRH) untuk langsung menukar pasangan task antar-VM
+                dan mendinginkan server bottleneck.
+              </p>
+            </div>
+            <div className="studio-panel p-4" style={{ borderColor: 'var(--ok-mint)' }}>
+              <div className="text-xs font-bold" style={{ color: 'var(--ok-mint)' }}>
+                3. Kenapa Lebih Unggul
+              </div>
+              <p className="m-0 mt-1.5 text-sm font-semibold leading-snug">
+                Konvergensi jauh lebih cepat dan hasil lebih stabil daripada SA murni pada jatah
+                evaluasi yang sama, sekaligus mengungguli heuristik kaku.
+              </p>
+            </div>
+          </div>
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-[0.88fr_1.35fr]">
             <div className="studio-panel flex flex-col justify-between gap-3 p-4 pb-10">
               <div>
                 <div className="text-xs font-bold text-[var(--ink-secondary)]">
-                  Skor Kuis Percobaan Pertama
+                  Skor Cek Paham (Percobaan Pertama)
                 </div>
                 <div className="font-display mt-1 text-5xl font-extrabold">
                   {scoreCount}
-                  <span className="text-2xl text-[var(--ink-secondary)]"> / 2</span>
+                  <span className="text-2xl text-[var(--ink-secondary)]"> / 3</span>
                 </div>
-                <ul className="mt-2 flex list-disc flex-col gap-1 pl-4 text-xs font-semibold text-[var(--ink-secondary)]">
-                  <li>
-                    <strong style={{ color: 'var(--sa-heat)' }}>SA</strong> membuka eksplorasi
-                    global lewat suhu panas.
-                  </li>
-                  <li>
-                    <strong style={{ color: 'var(--opt-cyan)' }}>2-Opt</strong> merapikan silangan &
-                    beban VM bottleneck di tiap langkah.
-                  </li>
-                  <li>
-                    <strong style={{ color: 'var(--ok-mint)' }}>Evaluasi adil</strong> menyamakan
-                    budget evaluasi & multi-seed.
-                  </li>
-                </ul>
+                <p className="m-0 mt-2 text-xs leading-relaxed text-[var(--ink-secondary)]">
+                  Punya pertanyaan atau ingin menguji langsung jumlah task, suhu awal, dan uji 10 seed?
+                  Buka Sandbox Q&A di bawah ini!
+                </p>
               </div>
 
-              <CoachTarget active={q2Done} label="Lanjut eksperimen bebas!" position="bottom" className="w-full">
+              <CoachTarget active label="Buka lab tanya jawab!" position="bottom" className="w-full">
                 <button
                   type="button"
                   onClick={() => setViewMode('sandbox')}

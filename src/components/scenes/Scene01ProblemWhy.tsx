@@ -1,27 +1,29 @@
 import { useMemo, useState } from 'react';
-import { TEAM_MEMBERS } from '../../data/content';
-import { KELOMPOK4_VERIFIED_BASELINES } from '../../data/kelompok4Baselines';
+import { QUIZZES, TEAM_MEMBERS } from '../../data/content';
 import { bruteForceOptimal } from '../../lib/algorithms/baselines';
 import {
   evaluateSchedule,
   MINI_DISPATCH_INITIAL,
   MINI_DISPATCH_PROBLEM,
 } from '../../lib/algorithms/cloudModel';
-import { formatId } from '../../lib/algorithms/rng';
 import { usePresentationStore } from '../../store/presentationStore';
 import { CloudFactoryCanvas } from '../ui/AnimatedCanvases';
 import { CoachMissionBanner, CoachTarget } from '../ui/GuidedCoach';
+import { QuizCard } from '../ui/QuizCard';
 import { VmRackGantt } from '../ui/VmRackGantt';
 
 interface Scene01Props {
   beat?: number;
-  exploreAll?: boolean;
 }
 
-export function Scene01ProblemWhy({ beat = 0, exploreAll = false }: Scene01Props) {
+export function Scene01ProblemWhy({ beat = 0 }: Scene01Props) {
   const setBeat = usePresentationStore((s) => s.setBeat);
-  const toggleAutoPlay = usePresentationStore((s) => s.toggleAutoPlay);
 
+  // Beat 0: Toggle animasi Bagi Asal (14 dtk macet) vs Bagi Cerdas (9 dtk rata)
+  const [factoryMode, setFactoryMode] = useState<'naive' | 'smart'>('naive');
+  const [sawSmartMode, setSawSmartMode] = useState(false);
+
+  // Beat 1: Eksperimen papan dispatch 6 Task x 3 VM
   const [assignment, setAssignment] = useState<number[]>(() => [...MINI_DISPATCH_INITIAL]);
   const [moves, setMoves] = useState(0);
 
@@ -51,71 +53,85 @@ export function Scene01ProblemWhy({ beat = 0, exploreAll = false }: Scene01Props
     setMoves((m) => Math.max(1, m));
   };
 
-  const showBeat0 = exploreAll || beat === 0;
-  const showBeat1 = exploreAll || beat === 1;
-  const showBeat2 = exploreAll || beat === 2;
-
-  const gocj1000 = KELOMPOK4_VERIFIED_BASELINES[1];
-  const nasa750 = KELOMPOK4_VERIFIED_BASELINES[3];
-
-  // Pastikan hanya ada 1 target kursor aktif di layar pada satu waktu:
-  // Langkah 1 (moves < 2): tunjuk paket task di VM bottleneck yang sedang panas.
-  // Langkah 2 (moves >= 2): serahkan pemandu ke tombol "Lihat Optimal (9 s)".
+  // Pastikan hanya 1 panah pemandu aktif di Beat 1
   const coachTaskId = useMemo(() => {
     if (reachedOptimal || moves >= 2) return null;
-    if (assignment[1] === 1 && currentMetrics.bottleneckVm === 1) return 1; // T2 di VM 2 yang panas
+    if (assignment[1] === 1 && currentMetrics.bottleneckVm === 1) return 1;
     const hotTask = assignment.findIndex((vmIdx) => vmIdx === currentMetrics.bottleneckVm);
     return hotTask >= 0 ? hotTask : null;
   }, [assignment, currentMetrics.bottleneckVm, moves, reachedOptimal]);
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* BEAT 0: Film Pembuka Cloud Factory 60fps */}
-      {showBeat0 && (
-        <div className="grid grid-cols-1 items-center gap-6 lg:grid-cols-[1.1fr_1.05fr]">
-          <div className="flex flex-col gap-4">
-            <h1 className="font-display text-3xl font-extrabold leading-[1.08] sm:text-4xl lg:text-[44px]">
-              Hybrid{' '}
-              <span style={{ color: 'var(--sa-heat)' }}>SA</span> +{' '}
+    <div className="flex flex-col gap-5">
+      {/* BAGIAN 1: Fundamental Masalah Cloud & Arti Makespan */}
+      {beat === 0 && (
+        <div className="grid grid-cols-1 items-center gap-6 lg:grid-cols-[1.08fr_1.05fr]">
+          <div className="flex flex-col gap-3.5">
+            <h1 className="font-display text-3xl font-extrabold leading-[1.08] sm:text-4xl lg:text-[42px]">
+              Hybrid <span style={{ color: 'var(--sa-heat)' }}>SA</span> +{' '}
               <span style={{ color: 'var(--opt-cyan)' }}>2-Opt</span> untuk Penjadwalan Cloud
             </h1>
-            <p className="m-0 max-w-xl text-sm leading-relaxed text-[var(--ink-secondary)] sm:text-base">
-              Tonton animasi di kanan: <strong className="text-[var(--ink-primary)]">task cloud</strong>{' '}
-              mengalir masuk ke server <strong className="text-[var(--ink-primary)]">DC Jakarta & Surabaya</strong>{' '}
-              dengan kecepatan berbeda. Tugas algoritma penjadwalan adalah membagi beban seimbang agar{' '}
-              <strong className="text-[var(--ink-primary)]">Makespan</strong> (waktu selesai VM terakhir)
-              sekecil mungkin.
-            </p>
+
+            <div className="studio-panel flex flex-col gap-2 p-3.5 text-sm">
+              <div className="text-xs font-bold" style={{ color: 'var(--opt-cyan)' }}>
+                2 Istilah Dasar yang Wajib Paham Dulu:
+              </div>
+              <p className="m-0 leading-relaxed text-[var(--ink-secondary)]">
+                <strong className="text-[var(--ink-primary)]">1. Cloud Task Scheduling:</strong>{' '}
+                membagi banyak tugas ke beberapa server (VM) yang kecepatannya berbeda-beda.
+              </p>
+              <p className="m-0 leading-relaxed text-[var(--ink-secondary)]">
+                <strong className="text-[var(--ink-primary)]">2. Makespan:</strong> waktu sampai{' '}
+                <strong style={{ color: 'var(--sa-heat)' }}>server terakhir selesai bekerja</strong>.
+                Jika VM 2 macet di 14 dtk, semua sistem tetap harus menunggu 14 dtk!
+              </p>
+            </div>
 
             <CoachMissionBanner
-              stepLabel="Pemandu · Mulai"
-              instruction="Kamu bisa klik 'Putar Otomatis' di bawah seperti menonton video, atau langsung klik tombol emas untuk mencoba sendiri."
+              stepLabel="Pemandu · Bandingkan Animasi"
+              instruction="Lihat animasi kanan: saat dibagi asal, VM 2 macet merah (14 dtk). Klik tombol biru untuk melihat perbedaannya saat dibagi cerdas!"
+              completed={sawSmartMode}
+              doneMessage="Kelihatan bedanya! Pembagian cerdas membuat ketiga server selesai hampir bersamaan di 9 detik (-36% lebih cepat). Lanjut coba bagi sendiri!"
             />
 
-            {!exploreAll && (
-              <div className="flex flex-wrap items-center gap-3 pt-1">
-                <CoachTarget active label="Mulai dari sini!" position="bottom">
+            <div className="flex flex-wrap items-center gap-2.5 pt-1 pb-6">
+              <button
+                type="button"
+                onClick={() => setFactoryMode('naive')}
+                className={`btn-studio text-xs ${factoryMode === 'naive' ? 'btn-studio-heat' : ''}`}
+              >
+                Bagi Asal (Macet 14s)
+              </button>
+
+              <CoachTarget active={!sawSmartMode} label="Klik lihat bedanya!" position="bottom">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFactoryMode('smart');
+                    setSawSmartMode(true);
+                  }}
+                  className={`btn-studio text-xs ${factoryMode === 'smart' ? 'btn-studio-cyan' : ''}`}
+                >
+                  Bagi Cerdas SA + 2-Opt (9s)
+                </button>
+              </CoachTarget>
+
+              {sawSmartMode && (
+                <CoachTarget active label="Lanjut coba praktik!" position="bottom">
                   <button
                     type="button"
                     onClick={() => setBeat(1)}
-                    className="btn-studio btn-studio-gold"
+                    className="btn-studio btn-studio-gold text-xs"
                   >
-                    Coba Atur Server Sendiri (30 dtk)
+                    Coba Atur Server Sendiri →
                   </button>
                 </CoachTarget>
-                <button
-                  type="button"
-                  onClick={toggleAutoPlay}
-                  className="btn-studio"
-                >
-                  ▶ Tonton Mode Video
-                </button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
           <div className="flex flex-col gap-3">
-            <CloudFactoryCanvas />
+            <CloudFactoryCanvas mode={factoryMode} />
 
             <div className="studio-panel p-3.5">
               <div className="mb-2 text-xs font-bold text-[var(--ink-secondary)]">
@@ -136,18 +152,18 @@ export function Scene01ProblemWhy({ beat = 0, exploreAll = false }: Scene01Props
         </div>
       )}
 
-      {/* BEAT 1: Mini-Game Dispatch dengan Pemandu Kursor */}
-      {showBeat1 && (
+      {/* BAGIAN 2: Eksperimen Dispatch + Kenapa Butuh Hybrid (Bukan 1 Metode Saja) */}
+      {beat === 1 && (
         <div className="flex flex-col gap-3.5">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
               <h2 className="font-display text-2xl font-extrabold sm:text-3xl">
-                Tantangan 30 Detik:{' '}
-                <span style={{ color: 'var(--sa-heat)' }}>Dinginkan Server Berasap!</span>
+                Coba Sendiri:{' '}
+                <span style={{ color: 'var(--sa-heat)' }}>Dinginkan VM 2 yang Macet!</span>
               </h2>
               <p className="mt-1 text-sm text-[var(--ink-secondary)]">
-                Server VM 2 sedang kepenuhan (14 detik). Pindahkan task dengan mengklik baloknya
-                untuk mencapai target optimal <strong>{optimal.metrics.makespan} detik</strong>.
+                Klik balok task untuk memindahkannya ke server lain. Target tercepat (optimal):{' '}
+                <strong className="text-[var(--ink-primary)]">{optimal.metrics.makespan} detik</strong>.
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -176,10 +192,10 @@ export function Scene01ProblemWhy({ beat = 0, exploreAll = false }: Scene01Props
             instruction={
               coachTaskId !== null
                 ? `Klik balok T${coachTaskId + 1} di dalam rak VM ${assignment[coachTaskId] + 1} yang berasap merah untuk mengurangi bebannya.`
-                : 'Bagus! Kamu sudah merasakan perubahan bebannya. Klik tombol biru "Lihat Optimal (9 s)" di kanan atas untuk melihat kunci optimalnya.'
+                : 'Bagus! Sekarang klik tombol biru "Lihat Optimal (9 s)" di kanan atas untuk melihat pembagian terbaiknya.'
             }
             completed={reachedOptimal}
-            doneMessage="Mantap! Semua server seimbang di 9 detik (optimal mutlak dari 729 kombinasi). Bayangkan kalau 1.000 task di 50 VM: mustahil manual!"
+            doneMessage="Mantap! Untuk 6 task saja ada 729 kombinasi. Di CloudSim tugas kita (1.000 task × 50 VM), kombinasinya tak terhitung sehingga kita wajib pakai algoritma optimasi!"
           />
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.45fr_1fr]">
@@ -192,199 +208,50 @@ export function Scene01ProblemWhy({ beat = 0, exploreAll = false }: Scene01Props
               coachTaskId={coachTaskId}
               coachTaskLabel={coachTaskId !== null ? `Klik T${coachTaskId + 1} ini!` : 'Klik paket ini!'}
               optimalBound={optimal.metrics.makespan}
-              title={`Papan Dispatch Langsung (${moves} perpindahan)`}
+              title={`Papan Eksperimen Dispatch (${moves} perpindahan)`}
             />
 
-            <div className="studio-panel flex flex-col justify-between gap-3 p-4">
-              <div>
-                <div className="mb-2 text-xs font-bold text-[var(--ink-secondary)]">
-                  Durasi Eksekusi per VM (Matriks ETC, detik)
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="font-mono-tabular w-full border-collapse text-center text-xs">
-                    <thead>
-                      <tr className="border-b border-[var(--border-line)]">
-                        <th className="py-1.5 text-left">Task</th>
-                        {MINI_DISPATCH_PROBLEM.vms.map((v) => (
-                          <th key={v.id} className="py-1.5">
-                            {v.name}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {MINI_DISPATCH_PROBLEM.tasks.map((task, tIdx) => (
-                        <tr key={task.id} className="border-b border-[var(--border-line)]/60">
-                          <td className="py-1.5 text-left font-bold">T{tIdx + 1}</td>
-                          {MINI_DISPATCH_PROBLEM.etc[tIdx].map((sec, vIdx) => {
-                            const active = assignment[tIdx] === vIdx;
-                            return (
-                              <td
-                                key={vIdx}
-                                className="rounded py-1.5 font-semibold"
-                                style={{
-                                  backgroundColor: active ? 'var(--coach-gold)' : 'transparent',
-                                  color: active ? 'var(--coach-ink)' : 'var(--ink-secondary)',
-                                  fontWeight: active ? 800 : 500,
-                                }}
-                              >
-                                {sec}s
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              <div className="font-mono-tabular rounded-xl bg-[var(--bg-inset)] px-3 py-2 text-xs text-[var(--ink-secondary)]">
-                Makespan sekarang:{' '}
-                <strong
-                  style={{
-                    color: reachedOptimal ? 'var(--ok-mint)' : 'var(--sa-heat)',
-                  }}
-                >
-                  {currentMetrics.makespan} s
-                </strong>{' '}
-                · Optimal Brute-Force: <strong className="text-[var(--ok-mint)]">9 s</strong>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* BEAT 2: Kenapa Butuh Hybrid? (Bukti Data Riil Kelompok 4) */}
-      {showBeat2 && (
-        <div className="flex flex-col gap-4">
-          <div>
-            <h2 className="font-display text-2xl font-extrabold sm:text-3xl">
-              Kenapa <span style={{ color: 'var(--sa-heat)' }}>SA Murni</span> butuh partner{' '}
-              <span style={{ color: 'var(--opt-cyan)' }}>2-Opt</span>?
-            </h2>
-            <p className="mt-1 text-sm text-[var(--ink-secondary)]">
-              Dari eksperimen CloudSim Kelompok 4 minggu lalu, SA murni sudah kuat di GoCJ, tetapi
-              masih menyisakan dua celah nyata yang tepat ditutup oleh 2-Opt.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-            <div className="studio-panel p-3.5">
+            <div className="studio-panel flex flex-col justify-between gap-2.5 p-3.5">
               <div className="text-xs font-bold text-[var(--ink-secondary)]">
-                Heuristik (Sufferage)
+                Kenapa Minggu Ini Kita Pakai Hybrid (Gabungan)?
               </div>
-              <p className="mt-1 text-sm font-semibold">
-                Sangat cepat sekali jalan, tetapi kaku karena keputusan awal tidak pernah direvisi.
-              </p>
-            </div>
-            <div className="studio-panel p-3.5" style={{ borderColor: 'var(--sa-heat)' }}>
-              <div className="text-xs font-bold" style={{ color: 'var(--sa-heat)' }}>
-                Metaheuristik (JAYA & SA)
-              </div>
-              <p className="mt-1 text-sm font-semibold">
-                Eksplorasi luas. SA menang di 14/15 kasus GoCJ kita, tetapi langkah akhirnya acak &
-                kurang rapi.
-              </p>
-            </div>
-            <div className="studio-panel p-3.5" style={{ borderColor: 'var(--opt-cyan)' }}>
-              <div className="text-xs font-bold" style={{ color: 'var(--opt-cyan)' }}>
-                Local Search (2-Opt)
-              </div>
-              <p className="mt-1 text-sm font-semibold">
-                Cepat memoles beban timpang antar-VM, tetapi mudah terjebak lokal jika berjalan
-                sendirian.
-              </p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-            <div className="studio-panel flex flex-col gap-2.5 p-4">
-              <div className="flex items-center justify-between gap-2">
-                <span className="font-display text-base font-extrabold">{gocj1000.name}</span>
-                <span
-                  className="font-mono-tabular rounded-md px-2 py-0.5 text-xs font-bold"
-                  style={{
-                    backgroundColor: 'var(--sa-heat-soft)',
-                    color: 'var(--sa-heat)',
-                  }}
+              <div className="flex flex-col gap-2 text-xs leading-snug">
+                <div className="rounded-xl bg-[var(--bg-inset)] p-2.5">
+                  <strong className="text-[var(--ink-primary)]">Heuristik (Sufferage):</strong>{' '}
+                  <span className="text-[var(--ink-secondary)]">
+                    Cepat sekali jalan, tapi kaku karena keputusan awal tidak pernah diperbaiki lagi.
+                  </span>
+                </div>
+                <div
+                  className="rounded-xl border p-2.5"
+                  style={{ borderColor: 'var(--sa-heat)', backgroundColor: 'var(--sa-heat-soft)' }}
                 >
-                  DOI SA = 0,43
-                </span>
-              </div>
-              <div className="flex flex-col gap-2 text-xs">
-                {gocj1000.rows.slice(0, 3).map((row) => (
-                  <div
-                    key={row.algorithm}
-                    className="grid grid-cols-[110px_1fr_82px] items-center gap-2"
-                  >
-                    <span className="font-semibold">{row.algorithm}</span>
-                    <div className="h-4 overflow-hidden rounded-full bg-[var(--bg-inset)]">
-                      <div
-                        className="h-full rounded-full transition-all duration-500"
-                        style={{
-                          width: `${(row.makespanMean / 3700) * 100}%`,
-                          backgroundColor:
-                            row.algorithm === 'SA' ? 'var(--sa-heat)' : 'var(--ink-secondary)',
-                        }}
-                      />
-                    </div>
-                    <span className="font-mono-tabular text-right font-bold">
-                      {formatId(row.makespanMean, 0)} s
-                    </span>
-                  </div>
-                ))}
-              </div>
-              <p className="m-0 text-xs text-[var(--ink-secondary)]">
-                Pada 1000 task, SA murni masih memiliki simpangan ±51,7 s dan ketimpangan antar-VM
-                (DOI 0,43).
-              </p>
-            </div>
-
-            <div className="studio-panel flex flex-col gap-2.5 p-4">
-              <div className="flex items-center justify-between gap-2">
-                <span className="font-display text-base font-extrabold">{nasa750.name}</span>
-                <span
-                  className="font-mono-tabular rounded-md px-2 py-0.5 text-xs font-bold"
-                  style={{
-                    backgroundColor: 'var(--sa-heat-soft)',
-                    color: 'var(--sa-heat)',
-                  }}
+                  <strong style={{ color: 'var(--sa-heat)' }}>Metaheuristik (SA Murni):</strong>{' '}
+                  <span className="text-[var(--ink-primary)]">
+                    Menang di GoCJ kita, tapi di 1000 task masih timpang (DOI 0,43) & di NASA hasilnya
+                    goyang (±66.963 s).
+                  </span>
+                </div>
+                <div
+                  className="rounded-xl border p-2.5"
+                  style={{ borderColor: 'var(--opt-cyan)', backgroundColor: 'var(--opt-cyan-soft)' }}
                 >
-                  Std SA ±66.963 s
-                </span>
+                  <strong style={{ color: 'var(--opt-cyan)' }}>Local Search (2-Opt):</strong>{' '}
+                  <span className="text-[var(--ink-primary)]">
+                    Sangat cepat merapikan beban antar-VM, tapi mudah macet kalau berjalan sendiri.
+                  </span>
+                </div>
               </div>
-              <div className="flex flex-col gap-2 text-xs">
-                {nasa750.rows.slice(0, 3).map((row) => (
-                  <div
-                    key={row.algorithm}
-                    className="grid grid-cols-[110px_1fr_88px] items-center gap-2"
-                  >
-                    <span className="font-semibold">{row.algorithm}</span>
-                    <div className="h-4 overflow-hidden rounded-full bg-[var(--bg-inset)]">
-                      <div
-                        className="h-full rounded-full transition-all duration-500"
-                        style={{
-                          width: `${(row.makespanMean / 960000) * 100}%`,
-                          backgroundColor:
-                            row.algorithm === 'SA' ? 'var(--sa-heat)' : 'var(--ink-secondary)',
-                        }}
-                      />
-                    </div>
-                    <span className="font-mono-tabular text-right font-bold">
-                      {formatId(row.makespanMean, 0)} s
-                    </span>
-                  </div>
-                ))}
+              <div className="font-mono-tabular text-xs font-semibold text-[var(--ink-secondary)]">
+                Solusi: <strong style={{ color: 'var(--ok-mint)' }}>Gabungkan SA + 2-Opt!</strong>
               </div>
-              <p className="m-0 text-xs text-[var(--ink-secondary)]">
-                Di beban NASA, hasil SA murni naik-turun antar-seed (terburuk 1.075.200 s). Polesan
-                2-Opt membantu menstabilkan hasil.
-              </p>
             </div>
           </div>
         </div>
       )}
+
+      {/* BAGIAN 3: Cek Paham 1/3 di sela materi sebelum masuk Episode 2 (SA) */}
+      {beat === 2 && <QuizCard quiz={QUIZZES.q1} nextLabel="Lanjut ke Episode 2: Dasar SA →" />}
     </div>
   );
 }

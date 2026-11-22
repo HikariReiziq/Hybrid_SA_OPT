@@ -1,7 +1,7 @@
 import { create } from 'zustand';
-import { SCENES } from '../data/content';
+import { type QuizId, SCENES } from '../data/content';
 
-export type ViewMode = 'video' | 'explore' | 'sandbox';
+export type ViewMode = 'video' | 'sandbox';
 export type ThemeMode = 'dark' | 'light';
 
 interface QuizRecord {
@@ -16,7 +16,7 @@ interface PresentationState {
   theme: ThemeMode;
   coachEnabled: boolean;
   autoPlay: boolean;
-  quizzes: Record<'q1' | 'q2', QuizRecord>;
+  quizzes: Record<QuizId, QuizRecord>;
 
   setViewMode: (mode: ViewMode) => void;
   setScene: (sceneIndex: number, beatIndex?: number) => void;
@@ -27,7 +27,7 @@ interface PresentationState {
   toggleCoach: () => void;
   setAutoPlay: (playing: boolean) => void;
   toggleAutoPlay: () => void;
-  answerQuiz: (quizId: 'q1' | 'q2', key: 'A' | 'B' | 'C' | 'D', isCorrect: boolean) => void;
+  answerQuiz: (quizId: QuizId, key: 'A' | 'B' | 'C' | 'D', isCorrect: boolean) => void;
   resetQuizzes: () => void;
 }
 
@@ -47,6 +47,7 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
   quizzes: {
     q1: { selectedKey: null, firstAttemptCorrect: null },
     q2: { selectedKey: null, firstAttemptCorrect: null },
+    q3: { selectedKey: null, firstAttemptCorrect: null },
   },
 
   setViewMode: (viewMode) => set({ viewMode, autoPlay: false }),
@@ -117,6 +118,7 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
       quizzes: {
         q1: { selectedKey: null, firstAttemptCorrect: null },
         q2: { selectedKey: null, firstAttemptCorrect: null },
+        q3: { selectedKey: null, firstAttemptCorrect: null },
       },
     }),
 }));

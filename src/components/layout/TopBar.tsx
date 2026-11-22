@@ -13,17 +13,18 @@ export function TopBar() {
   const toggleTheme = usePresentationStore((s) => s.toggleTheme);
   const toggleCoach = usePresentationStore((s) => s.toggleCoach);
 
-  const scoreCount = [quizzes.q1.firstAttemptCorrect, quizzes.q2.firstAttemptCorrect].filter(
-    (v) => v === true,
-  ).length;
+  const scoreCount = [
+    quizzes.q1.firstAttemptCorrect,
+    quizzes.q2.firstAttemptCorrect,
+    quizzes.q3.firstAttemptCorrect,
+  ].filter((v) => v === true).length;
 
   const modes: Array<{ id: ViewMode; label: string }> = [
-    { id: 'video', label: 'Mode Film' },
-    { id: 'explore', label: 'Scroll Bebas' },
+    { id: 'video', label: 'Presentasi' },
     { id: 'sandbox', label: 'Sandbox Q&A' },
   ];
 
-  const epShort = ['1 · Masalah', '2 · SA', '3 · 2-Opt', '4 · Hybrid', '5 · Hasil'];
+  const epShort = ['1 · Masalah', '2 · Dasar SA', '3 · Dasar 2-Opt', '4 · Hybrid Live', '5 · Hasil'];
 
   return (
     <header
@@ -34,7 +35,7 @@ export function TopBar() {
       }}
     >
       <div className="mx-auto flex max-w-[1380px] flex-wrap items-center justify-between gap-2 px-3 py-2 sm:px-5 xl:flex-nowrap">
-        {/* Identitas Studio Animasi */}
+        {/* Identitas Presentasi */}
         <button
           type="button"
           onClick={() => {
@@ -55,36 +56,26 @@ export function TopBar() {
               Hybrid SA + 2-Opt
             </div>
             <div className="font-mono-tabular text-[10px] font-medium text-[var(--ink-secondary)]">
-              SOKA Kelompok 4 · 8 mnt
+              SOKA Kelompok 4 · 10 mnt
             </div>
           </div>
         </button>
 
         {/* Chapter Episodes (desktop) */}
-        {viewMode !== 'sandbox' && (
-          <nav aria-label="Daftar Episode" className="hidden items-center gap-1 xl:flex">
+        {viewMode === 'video' && (
+          <nav aria-label="Daftar Episode" className="hidden items-center gap-1 lg:flex">
             {SCENES.map((sc, idx) => {
-              const active = viewMode === 'video' && sceneIndex === idx;
+              const active = sceneIndex === idx;
               return (
                 <button
                   key={sc.id}
                   type="button"
-                  onClick={() => {
-                    if (viewMode === 'explore') {
-                      document.getElementById(`scene-${sc.id}`)?.scrollIntoView({
-                        behavior: 'smooth',
-                      });
-                    } else {
-                      setScene(idx, 0);
-                    }
-                  }}
-                  className="min-h-[34px] whitespace-nowrap rounded-lg px-2 py-1 text-xs font-bold transition-colors"
+                  onClick={() => setScene(idx, 0)}
+                  className="min-h-[34px] whitespace-nowrap rounded-lg px-2.5 py-1 text-xs font-bold transition-colors"
                   style={{
                     backgroundColor: active ? 'var(--opt-cyan-soft)' : 'transparent',
                     color: active ? 'var(--opt-cyan)' : 'var(--ink-secondary)',
-                    border: active
-                      ? '1px solid var(--opt-cyan)'
-                      : '1px solid transparent',
+                    border: active ? '1px solid var(--opt-cyan)' : '1px solid transparent',
                   }}
                 >
                   {epShort[idx] ?? `Ep ${idx + 1}`}
@@ -94,7 +85,7 @@ export function TopBar() {
           </nav>
         )}
 
-        {/* Kontrol Kanan: Mode Switcher + Toggle Pemandu + Skor + Theme */}
+        {/* Kontrol Kanan: 2 Mode Fokus + Toggle Pemandu + Skor 3 Cek Paham + Theme */}
         <div className="flex flex-wrap items-center gap-1.5 xl:shrink-0">
           <div
             role="tablist"
@@ -114,7 +105,7 @@ export function TopBar() {
                   role="tab"
                   aria-selected={active}
                   onClick={() => setViewMode(m.id)}
-                  className="min-h-[34px] rounded-lg px-2.5 py-1 text-xs font-bold transition-colors"
+                  className="min-h-[34px] rounded-lg px-3 py-1 text-xs font-bold transition-colors"
                   style={{
                     backgroundColor: active ? 'var(--opt-cyan)' : 'transparent',
                     color: active ? 'var(--on-cyan)' : 'var(--ink-primary)',
@@ -148,7 +139,7 @@ export function TopBar() {
               color: 'var(--ink-primary)',
             }}
           >
-            Skor {scoreCount}/2
+            Skor {scoreCount}/3
           </span>
 
           <button

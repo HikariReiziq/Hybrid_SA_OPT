@@ -48,7 +48,7 @@ export function SandboxView() {
         </div>
 
         <button type="button" onClick={() => setViewMode('video')} className="btn-studio text-xs">
-          ← Kembali ke Mode Film
+          ← Kembali ke Presentasi
         </button>
       </div>
 

@@ -14,37 +14,36 @@ import { VmRackGantt } from '../ui/VmRackGantt';
 
 interface Scene04Props {
   beat?: number;
-  exploreAll?: boolean;
 }
 
 const LRH_STEPS = [
   {
     id: 0,
-    title: '1. SA Perturb',
-    role: 'Eksplorasi Global',
+    title: '1. Acak SA (Perturb)',
+    role: 'Eksplorasi Luas',
     color: 'var(--sa-heat)',
-    desc: 'SA mengacak penempatan task untuk membuka wilayah solusi baru di luar zona nyaman.',
+    desc: 'SA membuat ide jadwal baru secara acak untuk mencari area solusi baru di luar kebiasaan.',
   },
   {
     id: 1,
-    title: '2. 2-Opt Poles (LRH)',
-    role: 'Eksploitasi Lokal',
+    title: '2. Poles 2-Opt (Inti Hybrid)',
+    role: 'Eksploitasi Cepat',
     color: 'var(--opt-cyan)',
-    desc: 'Di dalam inner loop SA, 2-Opt langsung menyisir VM bottleneck dan menukar pasangan task agar rata.',
+    desc: 'Di dalam tiap putaran SA, 2-Opt langsung menukar task dari VM macet agar jadwal langsung rata (16s → 11s).',
   },
   {
     id: 2,
-    title: '3. Cek Metropolis',
+    title: '3. Cek Peluang Metropolis',
     role: 'Anti Jebakan Lokal',
     color: 'var(--ok-mint)',
-    desc: 'Jika lebih cepat langsung diterima; jika lebih buruk tetap berpeluang diterima sebesar P = exp(-ΔE/T).',
+    desc: 'Jika lebih cepat langsung dipakai; jika lebih lambat tetap berpeluang diterima saat suhu masih panas.',
   },
   {
     id: 3,
-    title: '4. Cooling Schedule',
+    title: '4. Turunkan Suhu (Cooling)',
     role: 'Penguncian',
     color: 'var(--gold-text)',
-    desc: 'Setelah inner loop selesai, suhu diturunkan (T = T × r) sampai solusi terbaik S_opt terkunci.',
+    desc: 'Suhu diturunkan perlahan (T × 0,90) lalu ulangi sampai dingin agar jadwal terbaik S_opt terkunci.',
   },
 ] as const;
 
@@ -73,7 +72,7 @@ function createRaceBundle(seed: number) {
   return { problem, engines: { sa, hyb } };
 }
 
-export function Scene04HybridRace({ beat = 0, exploreAll = false }: Scene04Props) {
+export function Scene04HybridRace({ beat = 0 }: Scene04Props) {
   const [activeLrhStep, setActiveLrhStep] = useState(1);
 
   const [raceSeed, setRaceSeed] = useState(2026);
@@ -141,21 +140,28 @@ export function Scene04HybridRace({ beat = 0, exploreAll = false }: Scene04Props
       ? ((saSnap.bestMakespan - hybSnap.bestMakespan) / saSnap.bestMakespan) * 100
       : 0;
 
-  const showBeat0 = exploreAll || beat === 0;
-  const showBeat1 = exploreAll || beat === 1;
+  // Komentator bahasa awam yang menjelaskan arti gerak kurva secara real time
+  const liveCommentary = !hasStartedRace
+    ? 'Klik "▶ Mulai Race Live"! Keduanya mengerjakan 18 task yang persis sama dengan jatah percobaan setara (320 kali). Ingat: garis makin ke BAWAH berarti makin CEPAT!'
+    : bothDone
+      ? `Selesai pada jatah ${RACE_BUDGET} percobaan! Perhatikan grafik di bawah: garis biru Hybrid langsung menukik tajam sejak awal karena dibantu ${hybSnap.twoOptSwapsTotal}× polesan 2-Opt, sedangkan SA Murni butuh jauh lebih banyak percobaan untuk mengejar.`
+      : hybSnap.bestMakespan < saSnap.bestMakespan - 1
+        ? `Lihat grafiknya! Garis biru Hybrid (${formatId(hybSnap.bestMakespan, 1)}s) sudah melesat jauh lebih rendah daripada SA Murni (${formatId(saSnap.bestMakespan, 1)}s) berkat sinar pemindai 2-Opt di rak kanan!`
+        : `Balapan berjalan (${hybSnap.evaluations}/${RACE_BUDGET} percobaan): perhatikan kurva biru sudah jauh lebih awal menyentuh dasar dibandingkan garis oranye putus-putus!`;
 
   return (
     <div className="flex flex-col gap-5">
-      {/* BEAT 0: Mention Ringkas Paper + Animasi Siklus 4 Stasiun LRH */}
-      {showBeat0 && (
+      {/* BAGIAN 1: Mention Ringkas Paper + Animasi 60fps Mesin 4 Tahap Hybrid */}
+      {beat === 0 && (
         <div className="flex flex-col gap-3.5">
           <div>
             <h2 className="font-display text-2xl font-extrabold sm:text-3xl">
-              Anatomi <span style={{ color: 'var(--opt-cyan)' }}>Hybrid SA + 2-Opt</span>
+              Cara Kerja Gabungan:{' '}
+              <span style={{ color: 'var(--opt-cyan)' }}>Hybrid SA + 2-Opt</span>
             </h2>
             <p className="mt-1 text-sm text-[var(--ink-secondary)]">
-              Termasuk pola <strong className="text-[var(--ink-primary)]">{PAPER_MENTION.taxonomy}</strong>:
-              2-Opt dipanggil langsung di dalam tiap langkah SA.
+              Polanya disebut <strong className="text-[var(--ink-primary)]">{PAPER_MENTION.taxonomy}</strong>:
+              setiap kali SA punya ide baru, 2-Opt langsung memolesnya di dalam putaran yang sama.
             </p>
           </div>
 
@@ -177,7 +183,6 @@ export function Scene04HybridRace({ beat = 0, exploreAll = false }: Scene04Props
             <p className="m-0 text-xs text-[var(--ink-secondary)]">{PAPER_MENTION.oneLineCore}</p>
           </div>
 
-          {/* Animasi 60fps Bola Data Mengelilingi 4 Stasiun LRH */}
           <LrhOrbitCanvas activeStep={activeLrhStep} onStepSelect={setActiveLrhStep} />
 
           <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
@@ -211,27 +216,26 @@ export function Scene04HybridRace({ beat = 0, exploreAll = false }: Scene04Props
         </div>
       )}
 
-      {/* BEAT 1: Live Broadcast Race (SA Murni vs Hybrid SA + 2-Opt) */}
-      {showBeat1 && (
+      {/* BAGIAN 2: Eksperimen Duel Live SA Murni vs Hybrid SA + 2-Opt */}
+      {beat === 1 && (
         <div className="flex flex-col gap-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
               <h2 className="font-display text-xl font-extrabold sm:text-2xl">
-                Siaran Langsung:{' '}
-                <span style={{ color: 'var(--sa-heat)' }}>SA Murni</span> vs{' '}
+                Eksperimen Live: <span style={{ color: 'var(--sa-heat)' }}>SA Murni</span> vs{' '}
                 <span style={{ color: 'var(--opt-cyan)' }}>Hybrid SA + 2-Opt</span>
               </h2>
               <p className="font-mono-tabular m-0 text-xs text-[var(--ink-secondary)]">
-                18 Task · 4 VM Heterogen · Seed {raceSeed} · Budget setara maks {RACE_BUDGET}{' '}
-                evaluasi
+                18 Task · 4 VM · Seed {raceSeed} · Jatah percobaan adil: maks {RACE_BUDGET} evaluasi
               </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
               <CoachTarget
                 active={!hasStartedRace && !running}
-                label="Klik untuk mulai balapan!"
+                label="Klik untuk mulai duel!"
                 position="top"
+                align="start"
               >
                 <button
                   type="button"
@@ -262,27 +266,23 @@ export function Scene04HybridRace({ beat = 0, exploreAll = false }: Scene04Props
                 onClick={() => resetRace(((raceSeed * 1103515245 + 12345) >>> 0) % 9000 + 1000)}
                 className="btn-studio text-xs"
               >
-                Ganti Seed
+                Ganti Soal (Seed)
               </button>
               <button
                 type="button"
                 onClick={() => setXAxis((x) => (x === 'evals' ? 'step' : 'evals'))}
                 className="btn-studio text-xs"
               >
-                Sumbu-X: {xAxis === 'evals' ? 'Evaluasi' : 'Langkah'}
+                Sumbu-X: {xAxis === 'evals' ? 'Jatah Evaluasi' : 'Langkah'}
               </button>
             </div>
           </div>
 
           <CoachMissionBanner
-            stepLabel={running ? 'Siaran Berlangsung' : 'Pemandu · Live Race'}
-            instruction={
-              running
-                ? 'Perhatikan sinar cyan 2-Opt menyapu rak kanan dan garis biru Hybrid menukik lebih tajam daripada garis oranye putus-putus SA Murni!'
-                : "Klik tombol emas 'Mulai Race Live' untuk menyaksikan garis biru Hybrid SA + 2-Opt melesat turun jauh lebih cepat daripada SA Murni pada budget evaluasi yang sama."
-            }
+            stepLabel={running ? 'Komentator Live' : 'Pemandu · Eksperimen'}
+            instruction={liveCommentary}
             completed={bothDone}
-            doneMessage={`Race selesai pada budget ${RACE_BUDGET} evaluasi! Lihat bagaimana garis biru Hybrid langsung menukik tajam sejak awal.`}
+            doneMessage={liveCommentary}
           />
 
           <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
@@ -291,7 +291,7 @@ export function Scene04HybridRace({ beat = 0, exploreAll = false }: Scene04Props
               assignment={saSnap.bestAssignment}
               scaleMax={scaleMax}
               compact
-              title={`SA Murni · ${saSnap.evaluations} eval · T=${formatId(saSnap.temperature, 1)}`}
+              title={`SA Murni · ${saSnap.evaluations} percobaan · T=${formatId(saSnap.temperature, 1)}`}
             />
             <VmRackGantt
               problem={bundle.problem}
@@ -299,16 +299,17 @@ export function Scene04HybridRace({ beat = 0, exploreAll = false }: Scene04Props
               scaleMax={scaleMax}
               compact
               scanFlashKey={scanFlash}
-              title={`Hybrid SA + 2-Opt · ${hybSnap.evaluations} eval · ${hybSnap.twoOptSwapsTotal}× poles`}
+              title={`Hybrid SA + 2-Opt · ${hybSnap.evaluations} percobaan · ${hybSnap.twoOptSwapsTotal}× poles 2-Opt`}
             />
           </div>
 
           <ConvergenceSvg
-            height={148}
-            title="Kurva Penurunan Makespan Terbaik (Budget Evaluasi Setara)"
+            height={152}
+            title="Grafik Kecepatan Penurunan Makespan"
+            readingHint="Makin ke BAWAH = Makin CEPAT! (Hybrid biru menukik lebih dulu)"
             xLabel={
               xAxis === 'evals'
-                ? 'Jumlah Fitness Evaluation (SA + 2-Opt dihitung jujur)'
+                ? 'Jumlah Percobaan / Evaluasi Jadwal (SA & 2-Opt dihitung adil bersama)'
                 : 'Jumlah Langkah Iterasi'
             }
             series={[
@@ -351,9 +352,11 @@ export function Scene04HybridRace({ beat = 0, exploreAll = false }: Scene04Props
               ({hybSnap.evaluations} eval)
             </span>
             <span style={{ color: diffPct >= 0 ? 'var(--ok-mint)' : 'var(--sa-heat)' }}>
-              {diffPct >= 0
-                ? `Hybrid lebih cepat ${formatId(diffPct, 1)}%`
-                : `SA sementara unggul ${formatId(Math.abs(diffPct), 1)}%`}
+              {diffPct > 0.05
+                ? `Hybrid unggul ${formatId(diffPct, 1)}%`
+                : diffPct < -0.05
+                  ? `SA sementara unggul ${formatId(Math.abs(diffPct), 1)}%`
+                  : 'Makespan sama (Hybrid mencapai dasar jauh lebih cepat!)'}
             </span>
           </div>
         </div>

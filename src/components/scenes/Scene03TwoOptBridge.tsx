@@ -4,8 +4,6 @@ import {
   decodePermutationToAssignment,
   evaluateSchedule,
   MINI_DISPATCH_PROBLEM,
-  MORPH_SWAP_INITIAL,
-  MORPH_SWAP_PROBLEM,
 } from '../../lib/algorithms/cloudModel';
 import { formatId } from '../../lib/algorithms/rng';
 import {
@@ -19,7 +17,7 @@ import {
   NETWORK_8_CROSSED_TOUR,
   tourDistance,
 } from '../../lib/algorithms/tsp2Opt';
-import { TwoOptMorphCanvas } from '../ui/AnimatedCanvases';
+import { CloudSwapAnimCanvas, TwoOptMorphCanvas } from '../ui/AnimatedCanvases';
 import { CoachMissionBanner, CoachTarget } from '../ui/GuidedCoach';
 import { QuizCard } from '../ui/QuizCard';
 import { Tex } from '../ui/Tex';
@@ -27,20 +25,19 @@ import { VmRackGantt } from '../ui/VmRackGantt';
 
 interface Scene03Props {
   beat?: number;
-  exploreAll?: boolean;
 }
 
 const INITIAL_PERM = [5, 0, 1, 2, 3, 4];
 
-export function Scene03TwoOptBridge({ beat = 0, exploreAll = false }: Scene03Props) {
+export function Scene03TwoOptBridge({ beat = 0 }: Scene03Props) {
   const [mapMode, setMapMode] = useState<'4-classic' | '8-network'>('4-classic');
   const [tour4, setTour4] = useState<number[]>([...CLASSIC_4_CROSSED_TOUR]);
   const [tour8, setTour8] = useState<number[]>([...NETWORK_8_CROSSED_TOUR]);
 
   const [cloudMode, setCloudMode] = useState<'pairwise' | 'permutation'>('pairwise');
   const [swapped, setSwapped] = useState(false);
-  const [scanFlash, setScanFlash] = useState(0);
   const [permReversed, setPermReversed] = useState(false);
+  const [scanFlash, setScanFlash] = useState(0);
 
   const cities = mapMode === '4-classic' ? CLASSIC_4_CITIES : NETWORK_8_CITIES;
   const activeTour = mapMode === '4-classic' ? tour4 : tour8;
@@ -64,21 +61,6 @@ export function Scene03TwoOptBridge({ beat = 0, exploreAll = false }: Scene03Pro
     else setTour8([...NETWORK_8_CROSSED_TOUR]);
   };
 
-  const morphAssignment = useMemo(() => {
-    const base = [...MORPH_SWAP_INITIAL];
-    if (swapped) {
-      const tmp = base[0];
-      base[0] = base[1];
-      base[1] = tmp;
-    }
-    return base;
-  }, [swapped]);
-
-  const morphMetrics = useMemo(
-    () => evaluateSchedule(MORPH_SWAP_PROBLEM, morphAssignment),
-    [morphAssignment],
-  );
-
   const activePerm = useMemo(
     () => (permReversed ? apply2OptReverse(INITIAL_PERM, 1, 4) : INITIAL_PERM),
     [permReversed],
@@ -92,52 +74,50 @@ export function Scene03TwoOptBridge({ beat = 0, exploreAll = false }: Scene03Pro
     [permAssignment],
   );
 
-  const showBeat0 = exploreAll || beat === 0;
-  const showBeat1 = exploreAll || beat === 1;
-  const showBeat2 = exploreAll || beat === 2;
-
   return (
-    <div className="flex flex-col gap-6">
-      {/* BEAT 0: Animasi 60fps 2-Opt Wire Uncrosser */}
-      {showBeat0 && (
+    <div className="flex flex-col gap-5">
+      {/* BAGIAN 1: Fundamental 2-Opt dari Nol (Kabel Bersilangan X) */}
+      {beat === 0 && (
         <div className="flex flex-col gap-3.5">
           <CoachMissionBanner
             stepLabel="Pemandu · Coba 2-Opt"
-            instruction="Perhatikan dua kabel merah yang menyilang X. Klik tombol 'Putus & Luruskan' atau klik langsung gambar kanvasnya untuk menonton animasi 2-Opt!"
+            instruction="Perhatikan dua kabel oranye yang menyilang huruf X. Klik 'Putus & Luruskan Jalur' atau klik langsung gambar kanvas untuk melihat animasi 2-Opt!"
             completed={crossings === 0}
-            doneMessage="Berhasil! Kabel langsung berayun lurus, jarak turun dari 922 ke 704. Kamu juga bisa klik 'Coba Peta 8 Simpul' untuk latihan lebih seru."
+            doneMessage="Berhasil! Kabel berayun lurus, total jarak turun dari 922 jadi 704 tanpa menambah simpul apa pun. Kamu juga bisa coba Peta 8 Simpul."
           />
 
           <div className="grid grid-cols-1 items-center gap-5 lg:grid-cols-[1.05fr_1fr]">
             <div className="flex flex-col gap-3">
               <h2 className="font-display text-2xl font-extrabold leading-tight sm:text-3xl">
-                2-Opt:{' '}
-                <span style={{ color: 'var(--opt-cyan)' }}>putus jalur silang</span>, sambung lurus!
+                2-Opt: <span style={{ color: 'var(--opt-cyan)' }}>putus jalur silang</span>, sambung
+                lurus!
               </h2>
               <p className="m-0 text-sm leading-relaxed text-[var(--ink-secondary)]">
-                Diperkenalkan Croes (1958): jika dua jalur saling menyilang membentuk huruf{' '}
-                <strong className="text-[var(--ink-primary)]">X</strong>, memutus lalu menyambungnya
-                ulang secara sejajar otomatis memperpendek total rute.
+                Diperkenalkan Croes (1958) sebagai <strong className="text-[var(--ink-primary)]">Local Search</strong>{' '}
+                yang sangat sederhana: kalau ada dua rute yang saling menyilang membentuk huruf{' '}
+                <strong className="text-[var(--ink-primary)]">X</strong>, cukup putus keduanya lalu
+                sambung sejajar. Hasilnya <strong className="text-[var(--ink-primary)]">pasti lebih pendek</strong>!
               </p>
 
               <div className="studio-panel p-3.5">
                 <div className="mb-1 text-xs font-bold" style={{ color: 'var(--opt-cyan)' }}>
-                  Syarat 2-Opt (Persamaan 1 Paper)
+                  Aturan Cek 2-Opt (Persamaan 1 di Paper)
                 </div>
                 <Tex math="d(A,B) + d(C,D) < d(A,D) + d(B,C)" block />
                 <div className="font-mono-tabular mt-1 text-xs font-semibold text-[var(--ink-secondary)]">
-                  Kasus 4 simpul: lurus{' '}
+                  Artinya: panjang lurus{' '}
                   <strong style={{ color: 'var(--ok-mint)' }}>
                     {formatId(classicEq.swappedPairDist, 0)}
                   </strong>{' '}
-                  &lt; silang{' '}
+                  &lt; panjang silang{' '}
                   <strong style={{ color: 'var(--sa-heat)' }}>
                     {formatId(classicEq.currentPairDist, 0)}
-                  </strong>
+                  </strong>{' '}
+                  → langsung ditukar!
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2 pt-1">
+              <div className="flex flex-wrap items-center gap-2 pt-1 pb-6">
                 <CoachTarget active={bestMove !== null} label="Klik untuk meluruskan!" position="bottom">
                   <button
                     type="button"
@@ -195,114 +175,87 @@ export function Scene03TwoOptBridge({ beat = 0, exploreAll = false }: Scene03Pro
 
               <div className="font-mono-tabular flex items-center justify-between text-xs text-[var(--ink-secondary)]">
                 <span>Urutan: [{activeTour.map((id) => cities[id].label).join(' → ')}]</span>
-                <span>{crossings > 0 ? 'Klik kanvas atau tombol biru' : 'Optimal lokal tercapai'}</span>
+                <span>{crossings > 0 ? 'Klik kanvas atau tombol biru' : 'Rapi & lebih pendek!'}</span>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* BEAT 1: Jembatan Adaptasi 2-Opt ke Cloud VM */}
-      {showBeat1 && (
+      {/* BAGIAN 2: Animasi 60fps 2-Opt di Server Cloud (Tukar 2 Task Antar-VM) */}
+      {beat === 1 && (
         <div className="flex flex-col gap-3.5">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
               <h2 className="font-display text-2xl font-extrabold sm:text-3xl">
-                Jembatan ke Cloud: 2-Opt pada{' '}
-                <span style={{ color: 'var(--opt-cyan)' }}>Server VM</span>
+                2-Opt di Server Cloud:{' '}
+                <span style={{ color: 'var(--opt-cyan)' }}>Tukar 2 Task Antar-VM!</span>
               </h2>
               <p className="mt-1 text-sm text-[var(--ink-secondary)]">
-                Dari rute kota di paper, ini dua cara mengadaptasi 2-Opt ke Cloud Task Scheduling:
+                Kalau di peta kota 2-Opt menukar 2 jalur, di Cloud Scheduling 2-Opt menukar{' '}
+                <strong className="text-[var(--ink-primary)]">2 task di server yang salah tempat</strong>.
               </p>
             </div>
 
-            <div className="inline-flex rounded-xl border border-[var(--border-line)] bg-[var(--bg-inset)] p-0.5">
-              <button
-                type="button"
-                onClick={() => setCloudMode('pairwise')}
-                className="min-h-[38px] rounded-lg px-3 py-1 text-xs font-bold"
-                style={{
-                  backgroundColor:
-                    cloudMode === 'pairwise' ? 'var(--opt-cyan)' : 'transparent',
-                  color: cloudMode === 'pairwise' ? 'var(--on-cyan)' : 'var(--ink-primary)',
-                }}
-              >
-                1. Tukar 2 Task (Pairwise)
-              </button>
-              <button
-                type="button"
-                onClick={() => setCloudMode('permutation')}
-                className="min-h-[38px] rounded-lg px-3 py-1 text-xs font-bold"
-                style={{
-                  backgroundColor:
-                    cloudMode === 'permutation' ? 'var(--opt-cyan)' : 'transparent',
-                  color: cloudMode === 'permutation' ? 'var(--on-cyan)' : 'var(--ink-primary)',
-                }}
-              >
-                2. Balik Urutan + Decoder
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => setCloudMode((m) => (m === 'pairwise' ? 'permutation' : 'pairwise'))}
+              className="btn-studio !min-h-[38px] text-xs"
+            >
+              {cloudMode === 'pairwise'
+                ? 'Intip Variasi 2: Balik Urutan Antrean'
+                : '← Kembali ke Animasi Tukar 2 Task'}
+            </button>
           </div>
 
           <CoachMissionBanner
-            stepLabel="Pemandu · Jembatan Cloud"
+            stepLabel="Pemandu · Animasi 2-Opt Cloud"
             instruction={
               cloudMode === 'pairwise'
-                ? 'Klik "Jalankan 2-Opt Swap (T1 ↔ T2)" untuk melihat sinar pemindai 2-Opt menukar dua task dan mendinginkan VM 2 seketika!'
-                : 'Klik "Balik Segmen Tengah" untuk melihat pembalikan urutan task ala TSP mengubah pembagian VM.'
+                ? 'Tonton animasinya: klik "Jalankan 2-Opt Swap (T1 ↔ T2)" di kanan untuk melihat balok T1 dan T2 terbang bertukar server dan mendinginkan VM 2!'
+                : 'Klik "Balik Segmen Tengah" untuk melihat cara kedua (ala urutan TSP): membalik urutan prioritas task lalu memasukkannya ke VM tercepat.'
             }
             completed={cloudMode === 'pairwise' ? swapped : permReversed}
             doneMessage={
               cloudMode === 'pairwise'
-                ? 'Makespan langsung anjlok dari 15 s ke 10 s (-33%) hanya dalam 1 kali 2-Opt Swap! Kamu juga bisa intip tab "2. Balik Urutan + Decoder".'
-                : 'Urutan task terbalik dan decoder EFT langsung menghitung penempatan baru.'
+                ? 'Langsung kelihatan! Hanya dalam 1 kali tukar, T1 (6s → 2s) dan T2 (7s → 2s) pindah ke server yang pas, sehingga Makespan anjlok dari 15 dtk ke 10 dtk (-33%)!'
+                : 'Urutan prioritas task dibalik dan decoder EFT otomatis menghitung pembagian VM yang lebih rata.'
             }
           />
 
           {cloudMode === 'pairwise' ? (
             <div className="grid grid-cols-1 items-center gap-4 lg:grid-cols-[1.35fr_1fr]">
-              <VmRackGantt
-                problem={MORPH_SWAP_PROBLEM}
-                assignment={morphAssignment}
-                scaleMax={16}
-                highlightTasks={[0, 1]}
-                optimalBound={10}
-                scanFlashKey={scanFlash}
-                title={
-                  swapped
-                    ? 'Sesudah 2-Opt Swap (T1 ↔ T2): Server Seimbang di 10 s!'
-                    : 'Sebelum 2-Opt: Server VM 2 Panas di 15 s'
-                }
-              />
+              <CloudSwapAnimCanvas swapped={swapped} />
 
               <div className="studio-panel flex flex-col gap-3 p-4 pb-10">
                 <div className="text-xs font-bold" style={{ color: 'var(--opt-cyan)' }}>
-                  Adaptasi A · Pairwise 2-Opt Swap antar-VM
+                  Kenapa 1 Kali Tukar Bisa Memangkas 33%?
                 </div>
-                <p className="m-0 text-sm leading-relaxed text-[var(--ink-secondary)]">
-                  Tukar 1 task dari server panas (T2 di VM 2: 7 s) dengan 1 task di server lain (T1
-                  di VM 1: 6 s). Di server pasangannya, keduanya sama-sama selesai dalam 2 s!
-                </p>
+                <ul className="m-0 flex list-disc flex-col gap-1.5 pl-4 text-xs leading-relaxed text-[var(--ink-secondary)]">
+                  <li>
+                    <strong className="text-[var(--ink-primary)]">Kondisi Awal (15 dtk):</strong> T1
+                    butuh 6s di VM 1, dan T2 butuh 7s di VM 2 (keduanya tidak cocok di VM itu).
+                  </li>
+                  <li>
+                    <strong className="text-[var(--ink-primary)]">Aksi 2-Opt Swap:</strong> tukar
+                    T1 ↔ T2 antar-VM. Di server pasangannya, keduanya selesai hanya dalam{' '}
+                    <strong style={{ color: 'var(--ok-mint)' }}>2 detik</strong>!
+                  </li>
+                </ul>
                 <div className="font-mono-tabular rounded-xl bg-[var(--bg-inset)] p-2.5 text-xs">
-                  Makespan: <strong>15 s</strong> →{' '}
-                  <strong style={{ color: 'var(--ok-mint)' }}>
-                    {formatId(morphMetrics.makespan, 0)} s
-                  </strong>{' '}
-                  {swapped && '(turun 33% dalam 1 tukar!)'}
+                  Makespan: <strong>15 dtk</strong> →{' '}
+                  <strong style={{ color: swapped ? 'var(--ok-mint)' : 'var(--sa-heat)' }}>
+                    {swapped ? '10 dtk (Turun 33%!)' : '15 dtk (Belum ditukar)'}
+                  </strong>
                 </div>
                 <CoachTarget active={!swapped} label="Klik untuk tukar!" position="bottom" className="w-full">
                   <button
                     type="button"
-                    onClick={() => {
-                      setSwapped((s) => !s);
-                      setScanFlash((k) => k + 1);
-                    }}
-                    className={`btn-studio w-full text-xs ${
-                      swapped ? '' : 'btn-studio-cyan'
-                    }`}
+                    onClick={() => setSwapped((s) => !s)}
+                    className={`btn-studio w-full text-xs ${swapped ? '' : 'btn-studio-cyan'}`}
                   >
                     {swapped
-                      ? 'Kembalikan ke Kondisi Awal (15 s)'
+                      ? 'Kembalikan ke Kondisi Awal (15 dtk)'
                       : 'Jalankan 2-Opt Swap (T1 ↔ T2)'}
                   </button>
                 </CoachTarget>
@@ -316,16 +269,16 @@ export function Scene03TwoOptBridge({ beat = 0, exploreAll = false }: Scene03Pro
                 scaleMax={15}
                 optimalBound={9}
                 scanFlashKey={scanFlash}
-                title={`Hasil Decoder EFT (Makespan ${formatId(permMetrics.makespan, 0)} s)`}
+                title={`Variasi 2 · Hasil Decoder EFT (Makespan ${formatId(permMetrics.makespan, 0)} s)`}
               />
 
               <div className="studio-panel flex flex-col gap-3 p-4 pb-10">
                 <div className="text-xs font-bold" style={{ color: 'var(--opt-cyan)' }}>
-                  Adaptasi B · Permutasi Urutan + Reverse Segmen
+                  Variasi 2 · Balik Urutan Prioritas Task (Ala TSP)
                 </div>
-                <p className="m-0 text-sm leading-relaxed text-[var(--ink-secondary)]">
-                  Persis struktur TSP: simpan solusi sebagai urutan prioritas task, balik satu
-                  segmen dengan 2-Opt, lalu masukkan tiap task ke VM yang paling cepat selesai (EFT).
+                <p className="m-0 text-xs leading-relaxed text-[var(--ink-secondary)]">
+                  Solusi disimpan sebagai antrean urutan task. 2-Opt membalik potongan tengah antrean,
+                  lalu tiap task otomatis dimasukkan ke VM yang paling cepat selesai (EFT).
                 </p>
                 <div className="flex flex-wrap items-center gap-1.5">
                   {activePerm.map((tId, idx) => {
@@ -336,9 +289,7 @@ export function Scene03TwoOptBridge({ beat = 0, exploreAll = false }: Scene03Pro
                         className="font-mono-tabular rounded-lg border px-2.5 py-1 text-xs font-bold"
                         style={{
                           borderColor: inSlice ? 'var(--opt-cyan)' : 'var(--border-line)',
-                          backgroundColor: inSlice
-                            ? 'var(--opt-cyan-soft)'
-                            : 'var(--bg-inset)',
+                          backgroundColor: inSlice ? 'var(--opt-cyan-soft)' : 'var(--bg-inset)',
                           color: inSlice ? 'var(--opt-cyan)' : 'var(--ink-primary)',
                         }}
                       >
@@ -367,8 +318,8 @@ export function Scene03TwoOptBridge({ beat = 0, exploreAll = false }: Scene03Pro
         </div>
       )}
 
-      {/* BEAT 2: Quiz 1/2 */}
-      {showBeat2 && <QuizCard quiz={QUIZZES.q1} />}
+      {/* BAGIAN 3: Cek Paham 3/3 di sela materi sebelum masuk Episode 4 (Hybrid Live) */}
+      {beat === 2 && <QuizCard quiz={QUIZZES.q3} nextLabel="Lanjut ke Episode 4: Hybrid Live →" />}
     </div>
   );
 }
