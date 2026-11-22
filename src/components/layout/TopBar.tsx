@@ -17,6 +17,7 @@ export function TopBar() {
     quizzes.q1.firstAttemptCorrect,
     quizzes.q2.firstAttemptCorrect,
     quizzes.q3.firstAttemptCorrect,
+    quizzes.q4.firstAttemptCorrect,
   ].filter((v) => v === true).length;
 
   const modes: Array<{ id: ViewMode; label: string }> = [
@@ -56,7 +57,7 @@ export function TopBar() {
               Hybrid SA + 2-Opt
             </div>
             <div className="font-mono-tabular text-[10px] font-medium text-[var(--ink-secondary)]">
-              SOKA Kelompok 4 · 10 mnt
+              SOKA Kelompok 4 · Interaktif
             </div>
           </div>
         </button>
@@ -139,7 +140,7 @@ export function TopBar() {
               color: 'var(--ink-primary)',
             }}
           >
-            Skor {scoreCount}/3
+            Skor {scoreCount}/4
           </span>
 
           <button

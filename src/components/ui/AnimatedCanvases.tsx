@@ -1298,3 +1298,217 @@ export function LrhOrbitCanvas({
     />
   );
 }
+
+/**
+ * 7. ParadigmRaceCanvas (Episode 1 · Bagian 3 - BARU!):
+ * Animasi 60fps 4 jalur paralel yang langsung memperlihatkan bedanya:
+ * 1. Heuristik (Sufferage), 2. Local Search (2-Opt), 3. Metaheuristik (SA Murni), 4. Hybrid (SA + 2-Opt)!
+ */
+export function ParadigmRaceCanvas({
+  highlightIdx,
+  replayKey,
+}: {
+  highlightIdx: number | null;
+  replayKey: number;
+}) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const theme = usePresentationStore((s) => s.theme);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const W = 900;
+    const H = 224;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    const c = getThemeColors(theme);
+    const reduced = prefersReducedMotion();
+
+    // 4 kotak mini (2x2 grid) dengan lanskap pencarian yang identik
+    const cells = [
+      {
+        title: '1. Heuristik (Sufferage)',
+        subtitle: 'Cepat sekali jalan · Tidak pernah direvisi',
+        badge: 'Selesai: 11,5 dtk',
+        color: c.muted,
+        col: 0,
+        row: 0,
+      },
+      {
+        title: '2. Local Search (2-Opt Saja)',
+        subtitle: 'Cepat merapikan · Macet di lembah lokal!',
+        badge: 'Terjebak: 12,0 dtk',
+        color: c.violet,
+        col: 1,
+        row: 0,
+      },
+      {
+        title: '3. Metaheuristik (SA Murni)',
+        subtitle: 'Bisa melompati bukit · Lama merapikan akhir',
+        badge: 'Lambat rata: 9,9 dtk',
+        color: c.heat,
+        col: 0,
+        row: 1,
+      },
+      {
+        title: '4. Hybrid (SA + 2-Opt)',
+        subtitle: 'SA melompat keluar + 2-Opt langsung poles!',
+        badge: 'Tercepat: 9,0 dtk ✓',
+        color: c.mint,
+        col: 1,
+        row: 1,
+      },
+    ];
+
+    const cellW = 434;
+    const cellH = 100;
+    const padX = 12;
+    const padY = 10;
+
+    // Kurva bukit mini yang sama pada keempat kotak (u = 0..1 -> yOffset)
+    const hillY = (u: number) => {
+      const localDip = 18 * Math.exp(-(((u - 0.30) / 0.14) ** 2));
+      const peak = -16 * Math.exp(-(((u - 0.54) / 0.12) ** 2));
+      const globalDip = 28 * Math.exp(-(((u - 0.80) / 0.14) ** 2));
+      return 56 + localDip + peak + globalDip;
+    };
+
+    let rafId = 0;
+    const start = performance.now();
+    const cycleSec = 5.6;
+
+    const draw = (now: number) => {
+      const tCycle = reduced ? 4.8 : ((now - start) / 1000) % cycleSec;
+      const p = tCycle / cycleSec;
+
+      ctx.clearRect(0, 0, W, H);
+      ctx.fillStyle = c.bg;
+      ctx.beginPath();
+      ctx.roundRect(0, 0, W, H, 16);
+      ctx.fill();
+
+      cells.forEach((cell, idx) => {
+        const x0 = padX + cell.col * (cellW + 8);
+        const y0 = padY + cell.row * (cellH + 6);
+        const isHi = highlightIdx === idx || idx === 3;
+
+        ctx.fillStyle = c.panel;
+        ctx.strokeStyle = highlightIdx === idx ? c.goldFill : idx === 3 ? c.mint : c.pipe;
+        ctx.lineWidth = highlightIdx === idx ? 2.8 : idx === 3 ? 2 : 1.3;
+        ctx.beginPath();
+        ctx.roundRect(x0, y0, cellW, cellH, 12);
+        ctx.fill();
+        ctx.stroke();
+
+        // Judul & badge hasil
+        ctx.fillStyle = isHi ? cell.color : c.ink;
+        ctx.font = '800 12px "Plus Jakarta Sans", sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(cell.title, x0 + 12, y0 + 20);
+
+        ctx.fillStyle = c.muted;
+        ctx.font = '600 10px "Plus Jakarta Sans", sans-serif';
+        ctx.fillText(cell.subtitle, x0 + 12, y0 + 34);
+
+        ctx.fillStyle = cell.color;
+        ctx.font = '700 10.5px "IBM Plex Mono", monospace';
+        ctx.textAlign = 'right';
+        ctx.fillText(cell.badge, x0 + cellW - 12, y0 + 20);
+
+        // Gambar kurva lembah di dalam kotak
+        const gX = x0 + 16;
+        const gW = cellW - 32;
+        ctx.strokeStyle = c.pipe;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (let k = 0; k <= 44; k++) {
+          const u = k / 44;
+          const px = gX + u * gW;
+          const py = y0 + hillY(u);
+          if (k === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.stroke();
+
+        // Gerak bola masing-masing paradigma
+        let uPos = 0.1;
+        let lift = 0;
+        let showScan = false;
+
+        if (idx === 0) {
+          // Heuristik: langsung loncat cepat sekali jalan lalu diam di u=0.35
+          uPos = p < 0.22 ? 0.08 + (p / 0.22) * 0.27 : 0.35;
+        } else if (idx === 1) {
+          // Local Search 2-Opt: turun cepat ke lembah lokal u=0.30 lalu macet bergetar
+          uPos = p < 0.24 ? 0.08 + (p / 0.24) * 0.22 : 0.30 + Math.sin(p * 34) * 0.006;
+        } else if (idx === 2) {
+          // Metaheuristik SA: lompat bukit lalu zigzag pelan menuju 0.74
+          if (p < 0.24) {
+            uPos = 0.08 + (p / 0.24) * 0.22;
+          } else if (p < 0.62) {
+            const u = (p - 0.24) / 0.38;
+            uPos = 0.30 + u * 0.36;
+            lift = Math.sin(u * Math.PI) * 14;
+          } else {
+            const u = (p - 0.62) / 0.38;
+            uPos = 0.66 + u * 0.09 + Math.sin(u * Math.PI * 5) * 0.02;
+          }
+        } else {
+          // Hybrid SA + 2-Opt: SA lompat bukit lebih cepat lalu 2-Opt langsung kunci di dasar 0.80!
+          if (p < 0.18) {
+            uPos = 0.08 + (p / 0.18) * 0.22;
+          } else if (p < 0.46) {
+            const u = (p - 0.18) / 0.28;
+            uPos = 0.30 + u * 0.42;
+            lift = Math.sin(u * Math.PI) * 15;
+          } else if (p < 0.60) {
+            const u = (p - 0.46) / 0.14;
+            uPos = 0.72 + u * 0.08;
+            showScan = true;
+          } else {
+            uPos = 0.80;
+          }
+        }
+
+        const bx = gX + uPos * gW;
+        const by = y0 + hillY(uPos) - 5 - lift;
+
+        // Sinar polesan cyan 2-Opt di kotak Hybrid
+        if (showScan) {
+          ctx.strokeStyle = c.cyan;
+          ctx.lineWidth = 2.5;
+          ctx.beginPath();
+          ctx.arc(bx, by, 13, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+
+        ctx.fillStyle = cell.color;
+        ctx.beginPath();
+        ctx.arc(bx, by, 6.5, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      if (!reduced) {
+        rafId = requestAnimationFrame(draw);
+      }
+    };
+
+    rafId = requestAnimationFrame(draw);
+    return () => cancelAnimationFrame(rafId);
+  }, [theme, highlightIdx, replayKey]);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="h-auto w-full rounded-2xl border border-[var(--border-line)]"
+      role="img"
+      aria-label="Animasi 4 jalur perbandingan Heuristik, Local Search, Metaheuristik, dan Hybrid SA + 2-Opt"
+    />
+  );
+}

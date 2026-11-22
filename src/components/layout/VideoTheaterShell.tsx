@@ -43,12 +43,6 @@ export function VideoTheaterShell({ children }: VideoTheaterShellProps) {
   const activeSlotIdx =
     SCENES.slice(0, sceneIndex).reduce((sum, sc) => sum + sc.beats.length, 0) + beatIndex;
 
-  // Estimasi stempel waktu presentasi ~10 menit (600 detik)
-  const estSec = Math.round(((activeSlotIdx + 1) / timelineSlots.length) * 600);
-  const estTimeStr = `${String(Math.floor(estSec / 60)).padStart(2, '0')}:${String(
-    estSec % 60,
-  ).padStart(2, '0')}`;
-
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
@@ -115,7 +109,7 @@ export function VideoTheaterShell({ children }: VideoTheaterShellProps) {
           </div>
 
           <div className="font-mono-tabular text-xs font-semibold text-[var(--ink-secondary)]">
-            Bagian {beatIndex + 1} dari {scene.beats.length} · Est. {scene.minutes}
+            {scene.focusTag} · Bagian {beatIndex + 1} dari {scene.beats.length}
           </div>
         </div>
 
@@ -209,7 +203,9 @@ export function VideoTheaterShell({ children }: VideoTheaterShellProps) {
           </div>
 
           <div className="font-mono-tabular flex items-center gap-3 text-xs text-[var(--ink-secondary)]">
-            <span>{estTimeStr} / 10:00</span>
+            <span>
+              Bagian {activeSlotIdx + 1} / {timelineSlots.length}
+            </span>
             <span className="hidden sm:inline">
               Spasi: Putar/Jeda · Panah ← / →: Pindah bagian
             </span>

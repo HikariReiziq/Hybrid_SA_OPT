@@ -3,11 +3,12 @@ import {
   type CloudSimHybridDataset,
   validateCloudSimHybridJson,
 } from '../../data/cloudsimSchema';
-import { FAIR_CHECKLIST, REFERENCES } from '../../data/content';
+import { FAIR_CHECKLIST, QUIZZES, REFERENCES } from '../../data/content';
 import { KELOMPOK4_VERIFIED_BASELINES } from '../../data/kelompok4Baselines';
 import { formatId } from '../../lib/algorithms/rng';
 import { usePresentationStore } from '../../store/presentationStore';
 import { CoachMissionBanner, CoachTarget } from '../ui/GuidedCoach';
+import { QuizCard } from '../ui/QuizCard';
 
 interface Scene05Props {
   beat?: number;
@@ -134,6 +135,7 @@ export function Scene05CompareClosing({ beat = 0 }: Scene05Props) {
     quizzes.q1.firstAttemptCorrect,
     quizzes.q2.firstAttemptCorrect,
     quizzes.q3.firstAttemptCorrect,
+    quizzes.q4.firstAttemptCorrect,
   ].filter((v) => v === true).length;
 
   return (
@@ -346,8 +348,11 @@ export function Scene05CompareClosing({ beat = 0 }: Scene05Props) {
         </div>
       )}
 
-      {/* BAGIAN 2: Ringkasan Fundamental 30 Detik + Skor 3 Cek Paham + Referensi + CTA Sandbox */}
-      {beat === 1 && (
+      {/* BAGIAN 2: Cek Paham 4/4 (Evaluasi Adil sebelum penutup) */}
+      {beat === 1 && <QuizCard quiz={QUIZZES.q4} nextLabel="Lihat Ringkasan & Skor Akhir →" />}
+
+      {/* BAGIAN 3: Ringkasan Fundamental + Skor 4 Cek Paham + Referensi + CTA Sandbox */}
+      {beat === 2 && (
         <div className="flex flex-col gap-4">
           <div>
             <h2 className="font-display text-2xl font-extrabold sm:text-3xl">
@@ -397,7 +402,7 @@ export function Scene05CompareClosing({ beat = 0 }: Scene05Props) {
                 </div>
                 <div className="font-display mt-1 text-5xl font-extrabold">
                   {scoreCount}
-                  <span className="text-2xl text-[var(--ink-secondary)]"> / 3</span>
+                  <span className="text-2xl text-[var(--ink-secondary)]"> / 4</span>
                 </div>
                 <p className="m-0 mt-2 text-xs leading-relaxed text-[var(--ink-secondary)]">
                   Punya pertanyaan atau ingin menguji langsung jumlah task, suhu awal, dan uji 10 seed?

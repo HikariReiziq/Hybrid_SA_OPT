@@ -7,7 +7,7 @@ import {
   MINI_DISPATCH_PROBLEM,
 } from '../../lib/algorithms/cloudModel';
 import { usePresentationStore } from '../../store/presentationStore';
-import { CloudFactoryCanvas } from '../ui/AnimatedCanvases';
+import { CloudFactoryCanvas, ParadigmRaceCanvas } from '../ui/AnimatedCanvases';
 import { CoachMissionBanner, CoachTarget } from '../ui/GuidedCoach';
 import { QuizCard } from '../ui/QuizCard';
 import { VmRackGantt } from '../ui/VmRackGantt';
@@ -26,6 +26,10 @@ export function Scene01ProblemWhy({ beat = 0 }: Scene01Props) {
   // Beat 1: Eksperimen papan dispatch 6 Task x 3 VM
   const [assignment, setAssignment] = useState<number[]>(() => [...MINI_DISPATCH_INITIAL]);
   const [moves, setMoves] = useState(0);
+
+  // Beat 2: Animasi 4 Keluarga Algoritma
+  const [highlightFamily, setHighlightFamily] = useState<number | null>(3);
+  const [paradigmKey, setParadigmKey] = useState(1);
 
   const optimal = useMemo(() => bruteForceOptimal(MINI_DISPATCH_PROBLEM), []);
   const currentMetrics = useMemo(
@@ -250,8 +254,64 @@ export function Scene01ProblemWhy({ beat = 0 }: Scene01Props) {
         </div>
       )}
 
-      {/* BAGIAN 3: Cek Paham 1/3 di sela materi sebelum masuk Episode 2 (SA) */}
-      {beat === 2 && <QuizCard quiz={QUIZZES.q1} nextLabel="Lanjut ke Episode 2: Dasar SA →" />}
+      {/* BAGIAN 3: Animasi 60fps 4 Keluarga Algoritma (Heuristik vs Local Search vs Metaheuristik vs Hybrid) */}
+      {beat === 2 && (
+        <div className="flex flex-col gap-3.5">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h2 className="font-display text-2xl font-extrabold sm:text-3xl">
+                Peta Besar: Bedanya{' '}
+                <span style={{ color: 'var(--opt-cyan)' }}>4 Keluarga Algoritma</span>
+              </h2>
+              <p className="mt-1 text-sm text-[var(--ink-secondary)]">
+                Tonton 4 animasi bersamaan di bawah ini agar langsung paham posisi{' '}
+                <strong className="text-[var(--ink-primary)]">Hybrid SA + 2-Opt</strong> dibanding
+                metode yang pernah kita pelajari sebelumnya.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setParadigmKey((k) => k + 1)}
+              className="btn-studio text-xs"
+            >
+              Putar Ulang 4 Jalur
+            </button>
+          </div>
+
+          <CoachMissionBanner
+            stepLabel="Pemandu · Cara Baca Animasi"
+            instruction="Perhatikan kotak kanan bawah (4. Hybrid): bola oranye SA melompati bukit dulu, lalu lingkaran cyan 2-Opt langsung menariknya ke dasar 9,0 dtk paling cepat!"
+          />
+
+          <ParadigmRaceCanvas highlightIdx={highlightFamily} replayKey={paradigmKey} />
+
+          <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+            {[
+              { idx: 0, title: 'Heuristik (Sufferage)', note: 'Instan, 1 jalan, tidak bisa revisi.' },
+              { idx: 1, title: 'Local Search (2-Opt)', note: 'Tajam merapikan, tapi mentok lokal.' },
+              { idx: 2, title: 'Metaheuristik (SA)', note: 'Lolos jebakan lokal, lambat di akhir.' },
+              { idx: 3, title: 'Hybrid (SA + 2-Opt)', note: 'Gabungkan keduanya -> cepat & rata!' },
+            ].map((item) => (
+              <button
+                key={item.idx}
+                type="button"
+                onClick={() => setHighlightFamily(item.idx)}
+                className="studio-panel p-2.5 text-left text-xs transition-colors"
+                style={{
+                  borderColor: highlightFamily === item.idx ? 'var(--coach-gold)' : 'var(--border-line)',
+                  backgroundColor: highlightFamily === item.idx ? 'var(--bg-inset)' : 'var(--bg-panel)',
+                }}
+              >
+                <div className="font-bold text-[var(--ink-primary)]">{item.title}</div>
+                <div className="mt-0.5 text-[11px] text-[var(--ink-secondary)]">{item.note}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* BAGIAN 4: Cek Paham 1/4 di sela materi sebelum masuk Episode 2 (SA) */}
+      {beat === 3 && <QuizCard quiz={QUIZZES.q1} nextLabel="Lanjut ke Episode 2: Dasar SA →" />}
     </div>
   );
 }

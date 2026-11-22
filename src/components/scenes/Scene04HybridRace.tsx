@@ -73,7 +73,8 @@ function createRaceBundle(seed: number) {
 }
 
 export function Scene04HybridRace({ beat = 0 }: Scene04Props) {
-  const [activeLrhStep, setActiveLrhStep] = useState(1);
+  const [activeLrhStep, setActiveLrhStep] = useState(0);
+  const [cycledSteps, setCycledSteps] = useState(0);
 
   const [raceSeed, setRaceSeed] = useState(2026);
   const [bundle, setBundle] = useState(() => createRaceBundle(2026));
@@ -151,22 +152,42 @@ export function Scene04HybridRace({ beat = 0 }: Scene04Props) {
 
   return (
     <div className="flex flex-col gap-5">
-      {/* BAGIAN 1: Mention Ringkas Paper + Animasi 60fps Mesin 4 Tahap Hybrid */}
+      {/* BAGIAN 1: Mention Ringkas Paper + Simulasi Langkah-demi-Langkah Mesin 4 Tahap Hybrid */}
       {beat === 0 && (
-        <div className="flex flex-col gap-3.5">
-          <div>
-            <h2 className="font-display text-2xl font-extrabold sm:text-3xl">
-              Cara Kerja Gabungan:{' '}
-              <span style={{ color: 'var(--opt-cyan)' }}>Hybrid SA + 2-Opt</span>
-            </h2>
-            <p className="mt-1 text-sm text-[var(--ink-secondary)]">
-              Polanya disebut <strong className="text-[var(--ink-primary)]">{PAPER_MENTION.taxonomy}</strong>:
-              setiap kali SA punya ide baru, 2-Opt langsung memolesnya di dalam putaran yang sama.
-            </p>
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-wrap items-end justify-between gap-2">
+            <div>
+              <h2 className="font-display text-2xl font-extrabold sm:text-3xl">
+                Cara Kerja Gabungan:{' '}
+                <span style={{ color: 'var(--opt-cyan)' }}>Hybrid SA + 2-Opt</span>
+              </h2>
+              <p className="mt-1 text-sm text-[var(--ink-secondary)]">
+                Polanya disebut <strong className="text-[var(--ink-primary)]">{PAPER_MENTION.taxonomy}</strong>:
+                setiap kali SA punya ide baru, 2-Opt langsung memolesnya di dalam putaran yang sama.
+              </p>
+            </div>
+
+            <CoachTarget
+              active={cycledSteps < 3}
+              label={cycledSteps === 0 ? 'Klik jalankan siklus!' : `Lanjut tahap ${(activeLrhStep + 1) % 4 + 1}!`}
+              position="top"
+              align="end"
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveLrhStep((s) => (s + 1) % 4);
+                  setCycledSteps((c) => c + 1);
+                }}
+                className="btn-studio btn-studio-gold text-xs"
+              >
+                ▶ Jalankan Tahap Berikutnya ({activeLrhStep + 1}/4 → {((activeLrhStep + 1) % 4) + 1}/4)
+              </button>
+            </CoachTarget>
           </div>
 
           <div
-            className="studio-panel flex flex-col gap-1 p-3.5"
+            className="studio-panel flex flex-col gap-1 p-3"
             style={{ backgroundColor: 'var(--opt-cyan-soft)', borderColor: 'var(--opt-cyan)' }}
           >
             <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
@@ -183,7 +204,13 @@ export function Scene04HybridRace({ beat = 0 }: Scene04Props) {
             <p className="m-0 text-xs text-[var(--ink-secondary)]">{PAPER_MENTION.oneLineCore}</p>
           </div>
 
-          <LrhOrbitCanvas activeStep={activeLrhStep} onStepSelect={setActiveLrhStep} />
+          <LrhOrbitCanvas
+            activeStep={activeLrhStep}
+            onStepSelect={(next) => {
+              setActiveLrhStep(next);
+              setCycledSteps((c) => c + 1);
+            }}
+          />
 
           <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
             {LRH_STEPS.map((st) => {
@@ -192,9 +219,12 @@ export function Scene04HybridRace({ beat = 0 }: Scene04Props) {
                 <button
                   key={st.id}
                   type="button"
-                  onClick={() => setActiveLrhStep(st.id)}
+                  onClick={() => {
+                    setActiveLrhStep(st.id);
+                    setCycledSteps((c) => c + 1);
+                  }}
                   aria-pressed={active}
-                  className="studio-panel flex min-h-[104px] flex-col justify-between p-3 text-left transition-transform duration-150 hover:-translate-y-0.5"
+                  className="studio-panel flex min-h-[100px] flex-col justify-between p-3 text-left transition-transform duration-150 hover:-translate-y-0.5"
                   style={{
                     borderColor: active ? st.color : 'var(--border-line)',
                     backgroundColor: active ? 'var(--bg-inset)' : 'var(--bg-panel)',

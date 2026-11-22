@@ -48,6 +48,7 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
     q1: { selectedKey: null, firstAttemptCorrect: null },
     q2: { selectedKey: null, firstAttemptCorrect: null },
     q3: { selectedKey: null, firstAttemptCorrect: null },
+    q4: { selectedKey: null, firstAttemptCorrect: null },
   },
 
   setViewMode: (viewMode) => set({ viewMode, autoPlay: false }),
@@ -119,6 +120,7 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
         q1: { selectedKey: null, firstAttemptCorrect: null },
         q2: { selectedKey: null, firstAttemptCorrect: null },
         q3: { selectedKey: null, firstAttemptCorrect: null },
+        q4: { selectedKey: null, firstAttemptCorrect: null },
       },
     }),
 }));
