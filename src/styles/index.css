@@ -1,0 +1,255 @@
+@import "tailwindcss";
+@import "katex/dist/katex.min.css";
+
+/* ============================================================================
+ * DESIGN TOKENS: Mini Metro Transit Network × Kurzgesagt Expressive Lab
+ * 3 Core Colors (SA Heat, 2-Opt Rail, Balanced Emerald) + 1 Focus Accent
+ * Seluruh pasangan warna terverifikasi kontras WCAG AA pada Light & Dark Mode.
+ * ============================================================================ */
+
+:root {
+  --bg-canvas: #e8e4da;
+  --bg-surface: #f7f5ef;
+  --bg-elevated: #ffffff;
+  --bg-muted: #edeae0;
+
+  --ink-primary: #181a20;
+  --ink-secondary: #4c515e;
+  --border-ink: #181a20;
+  --border-subtle: #d3cec2;
+
+  --sa-heat: #c83d12;
+  --sa-heat-soft: #fdebe4;
+  --opt-rail: #1756b0;
+  --opt-rail-soft: #e6f0fd;
+  --ok-balance: #157347;
+  --ok-balance-soft: #e3f5ec;
+  --focus-signal: #f4c430;
+  --focus-signal-ink: #181a20;
+
+  --vm-0: #1756b0;
+  --vm-1: #6f42c1;
+  --vm-2: #0f766e;
+  --vm-3: #b45309;
+  --vm-4: #be123c;
+  --vm-5: #334155;
+
+  --font-display: "Bricolage Grotesque", system-ui, sans-serif;
+  --font-body: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  --bg-canvas: #0f1218;
+  --bg-surface: #171b24;
+  --bg-elevated: #202633;
+  --bg-muted: #262d3d;
+
+  --ink-primary: #f3f2ec;
+  --ink-secondary: #b0b6c4;
+  --border-ink: #4b5568;
+  --border-subtle: #2e3545;
+
+  --sa-heat: #f97046;
+  --sa-heat-soft: #3a1f18;
+  --opt-rail: #63a4ff;
+  --opt-rail-soft: #182b47;
+  --ok-balance: #3edb8b;
+  --ok-balance-soft: #133124;
+  --focus-signal: #f4c430;
+  --focus-signal-ink: #181a20;
+
+  --vm-0: #63a4ff;
+  --vm-1: #b48cff;
+  --vm-2: #34d399;
+  --vm-3: #f59e0b;
+  --vm-4: #fb7185;
+  --vm-5: #94a3b8;
+
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-canvas);
+  color: var(--ink-primary);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.025em;
+}
+
+.font-mono-tabular {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Penekanan kata kunci bergaya marker transit */
+.marker-highlight {
+  background: linear-gradient(transparent 58%, var(--focus-signal) 58%);
+  color: var(--ink-primary);
+  padding: 0 4px;
+  border-radius: 3px;
+}
+
+[data-theme="dark"] .marker-highlight {
+  background: var(--focus-signal);
+  color: var(--focus-signal-ink);
+  padding: 0 5px;
+}
+
+/* Panel berbingkai tinta tegas ala peta Mini Metro */
+.transit-card {
+  background-color: var(--bg-elevated);
+  border: 2px solid var(--border-ink);
+  border-radius: 14px;
+}
+
+.transit-surface {
+  background-color: var(--bg-surface);
+  border: 2px solid var(--border-ink);
+  border-radius: 16px;
+}
+
+/* Tombol taktil berkarakter */
+.btn-transit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 16px;
+  border-radius: 9px;
+  border: 2px solid var(--border-ink);
+  background-color: var(--bg-elevated);
+  color: var(--ink-primary);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 0.92rem;
+  cursor: pointer;
+  transition: transform 140ms ease, box-shadow 140ms ease, background-color 140ms ease;
+}
+
+.btn-transit:hover:not(:disabled) {
+  transform: translate(-1.5px, -1.5px);
+  box-shadow: 3px 3px 0 var(--border-ink);
+}
+
+.btn-transit:active:not(:disabled) {
+  transform: translate(0, 0);
+  box-shadow: none;
+}
+
+.btn-transit:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-transit-primary {
+  background-color: var(--ink-primary);
+  color: var(--bg-surface);
+  border-color: var(--ink-primary);
+}
+
+.btn-transit-heat {
+  background-color: var(--sa-heat);
+  color: #ffffff;
+  border-color: var(--border-ink);
+}
+
+[data-theme="dark"] .btn-transit-heat {
+  color: #181a20;
+}
+
+.btn-transit-rail {
+  background-color: var(--opt-rail);
+  color: #ffffff;
+  border-color: var(--border-ink);
+}
+
+[data-theme="dark"] .btn-transit-rail {
+  color: #10141c;
+}
+
+.btn-transit-signal {
+  background-color: var(--focus-signal);
+  color: var(--focus-signal-ink);
+  border-color: var(--border-ink);
+}
+
+/* Fokus keyboard yang jelas (R-32) */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible {
+  outline: 3px solid var(--opt-rail);
+  outline-offset: 2px;
+}
+
+/* Range slider taktil */
+input[type="range"].transit-range {
+  accent-color: var(--sa-heat);
+  height: 6px;
+  cursor: pointer;
+}
+
+/* Rak VM bottleneck (sentuhan ekspresif Kurzgesagt tanpa loop berkedip mengganggu) */
+.vm-rack-hot {
+  background-color: var(--sa-heat-soft);
+  border-color: var(--sa-heat) !important;
+}
+
+.vm-rack-cool {
+  background-color: var(--ok-balance-soft);
+  border-color: var(--ok-balance) !important;
+}
+
+/* KaTeX readability */
+.katex {
+  font-size: 1.05em;
+}
+
+/* Transisi masuk panggung ringan */
+@keyframes sceneReveal {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.scene-enter {
+  animation: sceneReveal 240ms cubic-bezier(0.22, 0.8, 0.3, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scene-enter {
+    animation: none;
+  }
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
