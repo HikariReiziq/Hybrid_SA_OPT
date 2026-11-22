@@ -1,34 +1,36 @@
-# DESIGN.md: Cloud Dispatch Network (Mini Metro × Kurzgesagt)
+# DESIGN.md: Animated Science Theater (Kurzgesagt Cinema + Guided Coach)
 
-> Reading this as: 8-Minute Interactive Presentation & Explorable Simulation Web App for IT students learning Hybrid SA + 2-Opt Cloud Scheduling, in a Mini Metro Transit Network + Kurzgesagt Expressive Lab style, dial ENERGY 2 / RHYTHM 3 / MOTION 2.
+> Reading this as: 8-Minute Interactive Animated Explainer Video & Guided Simulation Web App for IT students learning Hybrid SA + 2-Opt Cloud Scheduling, in a Kurzgesagt Animated Science Theater style with a Guided Cursor Coach, dial ENERGY 3 / RHYTHM 3 / MOTION 3.
 
 ## 1. Visual Identity & Differentiation Anchor
-- **Style**: Perpaduan **Peta Jaringan Transit (*Mini Metro*)** yang bersih, geometris, dan tegas di proyektor kelas dengan **Reaksi Rak VM Ekspresif (*Kurzgesagt*)** di mana server yang kepenuhan memerah hangat dan sejuk kembali saat seimbang.
-- **Identity Motif**: Garis rel warna tegas + simpul bertepi tinta (`2.5px`) + blok paket task berkode warna dan bentuk per VM, serta transisi visual langsung dari garis silang **X** menjadi sejajar.
+- **Style**: **Interactive Animated Science Film** (teater animasi vektor modern dengan panggung widescreen, timeline video player di bawah, dan *Guided Coach Pointer* yang memandu kursor pengguna awam langkah demi langkah). Sengaja 100% berbeda dari slide kertas putih bergaris hitam maupun buku perkamen kuno.
+- **Differentiation Anchor**: Jika logo dihapus, aplikasi langsung dikenali lewat **kanvas sinema Midnight Observatory (`#0B1120`)** tempat paket task meluncur hidup di pipa, bola panas SA melompati bukit di kanvas fisika 60fps, garis 2-Opt terurai dengan animasi pegas, dan **Pemandu Kursor Interaktif (Coach Hand + Halo Emas)** yang menuntun audiens awam.
 - **Purpose of Every Major Choice**:
-  - **Light Mode sebagai default**: Presentasi berlangsung di proyektor ruang kelas terang; permukaan `#F7F5EF` mencegah silau putih murni sambil menjaga rasio kontras tinta > 14:1.
-  - **Working Dark Mode toggle**: Mendukung ruangan presentasi redup dan eksplorasi mandiri malam hari dengan token warna yang disesuaikan agar tetap lolos WCAG AA.
-  - **3 Warna Inti + 1 Aksen Fokus**: Coral-Ember (`--sa-heat`) eksklusif untuk panas SA & VM bottleneck, Rail Cobalt (`--opt-rail`) eksklusif untuk operasi presisi 2-Opt, Emerald (`--ok-balance`) untuk hasil seimbang/optimal/benar, dan Signal Yellow (`--focus-signal`) terbatas pada sorotan kata kunci dan beat aktif.
-  - **Tipografi**: `Bricolage Grotesque` memberi karakter hangat-geometris untuk judul presentasi; `Plus Jakarta Sans` menjaga keterbacaan teks Indonesia; `IBM Plex Mono` memastikan angka makespan, suhu, dan evaluasi sejajar tabular.
-  - **Komposisi Bervariasi (`RHYTHM 3`)**: Setiap adegan punya tata letak khas sesuai fungsinya (Papan Dispatch 2-kolom -> Termostat Metropolis -> Panggung Morphing 2-Opt -> Split-Screen Race -> Matriks Perbandingan & Penutup).
-  - **Gerak Bermakna (`MOTION 2`)**: Hanya menganimasikan perpindahan paket VM, penguraian garis silang 2-Opt, jarum probabilitas, dan balapan kurva konvergensi. Tanpa animasi loop dekoratif; menghormati `prefers-reduced-motion`.
+  - **Midnight Studio sebagai tema bawaan (R-21)**: Format produk adalah **video animasi interaktif / cinema theater**; latar gelap kontras tinggi membuat paket bergerak, api termal SA, dan sinar pemindai 2-Opt langsung menonjol seperti menonton film animasi sains.
+  - **Working Daylight Studio Toggle (R-34)**: Menyediakan mode terang biru-slate sejuk (`#EEF4FB`) untuk ruang kelas dengan proyektor sangat terang, terverifikasi WCAG AA pada semua pasangan warna.
+  - **3 Warna Fungsional + 1 Aksen Pemandu (R-29)**:
+    - **SA Molten Amber**: panas suhu SA, bola eksplorasi, dan server bottleneck.
+    - **2-Opt Sky Cyan**: pemotongan silangan 2-Opt, sinar poles lokal, dan busur penukaran task.
+    - **Optimal Emerald**: jalur lurus, server seimbang, dan jawaban kuis benar.
+    - **Coach Gold**: eksklusif untuk pointer pemandu kursor dan posisi timeline aktif (selalu berteks gelap `#0F172A`).
+  - **Tipografi**: `Bricolage Grotesque` (judul ekspresif berkarakter studio animasi), `Plus Jakarta Sans` (narasi subtitle & instruksi Bahasa Indonesia super jelas), `IBM Plex Mono` (angka telemetri tabular).
+  - **Gerak Bermakna (`MOTION 3` - Choreography)**: 60fps canvas physics (bola SA melompati bukit, paket mengalir ke rak server, kabel 2-Opt terurai mulus, busur swap task melayang, pointer pemandu mengarahkan klik). Menghormati penuh `prefers-reduced-motion`.
 
-## 2. Color System (CSS Variables)
+## 2. Color System (WCAG AA >= 4.5:1 Verified)
 
-| Token | Light Mode | Dark Mode | Kegunaan |
+| Token | Midnight Theater (Default) | Daylight Studio (Toggle) | Peran Fungsional |
 | :--- | :--- | :--- | :--- |
-| `--bg-canvas` | `#E8E4DA` | `#0F1218` | Latar luar panggung |
-| `--bg-surface` | `#F7F5EF` | `#171B24` | Permukaan utama slide / panel |
-| `--bg-elevated` | `#FFFFFF` | `#202633` | Kartu interaktif & tabel |
-| `--ink-primary` | `#181A20` | `#F3F2EC` | Teks utama & garis tepi |
-| `--ink-secondary` | `#4C515E` | `#B0B6C4` | Teks sekunder & sumbu |
-| `--border-ink` | `#181A20` | `#3B4354` | Bingkai panel & jalur |
-| `--sa-heat` | `#C83D12` | `#F97046` | Panas SA & VM bottleneck |
-| `--opt-rail` | `#1756B0` | `#63A4FF` | Operasi lokal 2-Opt |
-| `--ok-balance` | `#157347` | `#3EDB8B` | Optimal, seimbang, benar |
-| `--focus-signal` | `#F4C430` | `#F4C430` | Sorotan beat / kata kunci (teks `#181A20`) |
-
-## 3. Radii, Elevation & Accessibility
-- **Border Radius**: Panel utama `16px`, kartu dalam `12px`, kontrol tombol `8px`, simpul node `50%` (khusus geometri node peta). Tidak semua elemen berbentuk pil.
-- **Shadow**: Hampir seluruh elemen datar berbingkai tinta tegas; bayangan solid tipis (`3px 3px 0`) hanya untuk tombol aksi utama dan kartu pilihan kuis saat hover.
-- **Keyboard & Contrast**: Fokus `:focus-visible` berupa cincin `3px` kontras tinggi; semua tombol memiliki target sentuh minimal `44px` pada mobile.
+| `--bg-canvas` | `#070B14` | `#E3ECF6` | Bingkai luar cinema |
+| `--bg-stage` | `#0E1526` | `#F8FBFF` | Panggung utama animasi |
+| `--bg-panel` | `#162038` | `#FFFFFF` | Panel kontrol & kartu data |
+| `--bg-inset` | `#1E2B4A` | `#EDF3FA` | Area lintasan & sub-panel |
+| `--ink-primary` | `#F3F6FC` | `#0F172A` | Teks utama & judul |
+| `--ink-secondary` | `#B2C0D8` | `#475569` | Keterangan & sumbu grafik |
+| `--border-line` | `#2B3B5E` | `#C7D6E8` | Garis pemisah bersih |
+| `--sa-heat` | `#FF7A3D` | `#B8380A` | Suhu SA & server bottleneck |
+| `--sa-heat-soft` | `#361C15` | `#FFF1EB` | Latar status panas |
+| `--opt-cyan` | `#38BDF8` | `#0369A1` | Aksi & sinar presisi 2-Opt |
+| `--opt-cyan-soft` | `#102B42` | `#E8F5FE` | Latar status 2-Opt |
+| `--ok-mint` | `#34D399` | `#047857` | Seimbang, optimal, benar |
+| `--ok-mint-soft` | `#0F2E26` | `#E6F8F1` | Latar status optimal |
+| `--coach-gold` | `#FBBF24` | `#F5B700` | Pointer pemandu & progress bar (teks `#0F172A`) |

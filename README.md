@@ -1,18 +1,18 @@
-# Hybrid Simulated Annealing + 2-Opt (Cloud Dispatch Network)
+# Hybrid Simulated Annealing + 2-Opt (Interactive Animated Explainer)
 
-Presentasi interaktif berdurasi **~8 menit** dan laboratorium simulasi sisi klien untuk mata kuliah **Strategi Optimasi Komputasi Awan (SOKA)**, Kelompok 4 Kelas C, Institut Teknologi Sepuluh Nopember (ITS).
+Film animasi interaktif berdurasi **~8 menit** dengan **Pemandu Kursor Interaktif (Guided Coach)** dan laboratorium simulasi untuk mata kuliah **Strategi Optimasi Komputasi Awan (SOKA)**, Kelompok 4 Kelas C, Institut Teknologi Sepuluh Nopember (ITS).
 
 ## Fitur Utama
 
-- **Dual-Mode Navigasi**: **Mode Presentasi (Deck)** dengan kontrol langkah via keyboard (`←`, `→`, `Spasi`) untuk proyektor kelas + **Mode Eksplorasi** (scroll bebas) + **Sandbox Q&A**.
-- **5 Adegan Padat (~8 Menit) + 2 Kuis Singkat**:
-  1. **Masalah & The WHY**: Mini-Game Cloud Dispatch (6 task × 3 VM vs optimal Brute-Force) + bukti celah SA murni dari eksperimen CloudSim Kelompok 4.
-  2. **Fundamental Simulated Annealing (SA)**: Intuisi panas -> dingin + Lab Termostat Metropolis interaktif + perbandingan pendinginan cepat vs bertahap.
-  3. **Fundamental 2-Opt & Jembatan Cloud**: Klik jalur silang gaya *Mini Metro* -> morphing ke Cloud Scheduling (Pairwise 2-Opt Swap & Permutasi + EFT Decoder) + Kuis 1/2.
-  4. **Hybrid SA + 2-Opt Beraksi**: Mention ringkas paper Gunawan & Iryanto (2023) & pola *Low-level Relay Hybrid (LRH)* + **Live Split-Screen Race** (SA Murni vs Hybrid SA + 2-Opt pada budget evaluasi setara).
-  5. **Perbandingan Fair & Penutup**: Data baseline nyata Kelompok 4 (Sufferage, JAYA, SA Murni) + tombol **Impor JSON CloudSim** untuk memasukkan hasil simulasi tim + 4 checklist evaluasi adil + Kuis 2/2 + Referensi ringkas.
-- **Sandbox Q&A**: Saklar **Ablation ON/OFF 2-Opt**, pengaturan parameter SA & skala workload, toggle sumbu-X (**Fitness Evaluation vs Langkah**), dan **Uji 10 Seed (`mean ± std`)**.
-- **Light & Dark Mode**: Tema terang kontras tinggi sebagai bawaan proyektor kelas, dilengkapi tombol toggle mode gelap.
+- **Mode Film Animasi Interaktif + Auto-Play**: Layar teater widescreen dengan tombol `▶ Putar Otomatis / ❚❚ Jeda`, timeline chapter ala pemutar video (`Ep 1` s.d. `Ep 5`), subtitle narasi, dan navigasi keyboard (`←`, `→`, `Spasi`).
+- **Pemandu Kursor Interaktif (`Pemandu: ON/OFF`)**: Setiap adegan dilengkapi bilah misi langkah-demi-langkah dan pointer kursor animasi (halo emas) yang menuntun audiens awam langsung ke tombol/paket yang perlu diklik.
+- **Animasi 60fps Nyata (HTML5 Canvas & SVG)**:
+  - **Episode 1**: Aliran paket cloud melewati router Hybrid SA + 2-Opt ke 3 server DC Jakarta & Surabaya + Mini-Game memindahkan task dari server berasap (target optimal 9 s).
+  - **Episode 2**: Simulasi fisika bola panas **Simulated Annealing** melompati bukit menuju Global Optimum dibanding bola Greedy yang terjebak + Termostat Metropolis interaktif 3 langkah.
+  - **Episode 3**: Animasi pelurusan dua kabel silang **2-Opt** secara halus + adaptasi Cloud (Pairwise Swap `15 s -> 10 s` & Permutasi Reverse + EFT) + **Kuis 1/2**.
+  - **Episode 4**: Mention ringkas paper *Gunawan & Iryanto (2023)* & siklus bola data 4 stasiun LRH + **Live Broadcast Race** (SA Murni vs Hybrid SA + 2-Opt dengan sinar pemindai cyan pada budget evaluasi setara).
+  - **Episode 5**: Perbandingan baseline nyata Kelompok 4 (Sufferage, JAYA, SA Murni) + impor JSON CloudSim tim + **Kuis 2/2** + Skor Akhir & Referensi ringkas.
+- **Sandbox Q&A & Mode Scroll Bebas**: Uji Ablation ON/OFF 2-Opt, toggle sumbu-X (Evaluasi vs Langkah), Uji 10 Seed (`mean ± std`), serta **Midnight Theater (default) / Daylight Studio Toggle**.
 
 ## Menjalankan Lokal
 
@@ -25,11 +25,3 @@ npm test         # unit test mesin algoritma & validator JSON
 npm run build    # type-check + build produksi ke dist/
 npm run preview  # pratinjau hasil build produksi
 ```
-
-## Memasukkan Hasil CloudSim Tim
-
-Pada **Adegan 05**, klik **Impor JSON CloudSim** atau perbarui [`public/data/cloudsim-hybrid.json`](public/data/cloudsim-hybrid.json) dengan mengubah `"isPlaceholder": false` dan mengisi array `"results"` per skenario (`SA+2Opt` / `DJAYA+2Opt`). Skema divalidasi otomatis oleh [`src/data/cloudsimSchema.ts`](src/data/cloudsimSchema.ts).
-
-## Deploy GitHub Pages
-
-Repositori dilengkapi workflow [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) yang otomatis menjalankan `npm test`, `npm run build`, dan menerbitkan `dist/` ke GitHub Pages setiap push ke branch `main`.
