@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 import { SCENES } from '../data/content';
 
-export type ViewMode = 'deck' | 'explore' | 'sandbox';
-export type ThemeMode = 'light' | 'dark';
+export type ViewMode = 'video' | 'explore' | 'sandbox';
+export type ThemeMode = 'dark' | 'light';
 
 interface QuizRecord {
   selectedKey: 'A' | 'B' | 'C' | 'D' | null;
@@ -14,6 +14,8 @@ interface PresentationState {
   sceneIndex: number;
   beatIndex: number;
   theme: ThemeMode;
+  coachEnabled: boolean;
+  autoPlay: boolean;
   quizzes: Record<'q1' | 'q2', QuizRecord>;
 
   setViewMode: (mode: ViewMode) => void;
@@ -22,6 +24,9 @@ interface PresentationState {
   nextStep: () => void;
   prevStep: () => void;
   toggleTheme: () => void;
+  toggleCoach: () => void;
+  setAutoPlay: (playing: boolean) => void;
+  toggleAutoPlay: () => void;
   answerQuiz: (quizId: 'q1' | 'q2', key: 'A' | 'B' | 'C' | 'D', isCorrect: boolean) => void;
   resetQuizzes: () => void;
 }
@@ -33,16 +38,18 @@ function applyThemeToDom(theme: ThemeMode) {
 }
 
 export const usePresentationStore = create<PresentationState>((set, get) => ({
-  viewMode: 'deck',
+  viewMode: 'video',
   sceneIndex: 0,
   beatIndex: 0,
-  theme: 'light',
+  theme: 'dark',
+  coachEnabled: true,
+  autoPlay: false,
   quizzes: {
     q1: { selectedKey: null, firstAttemptCorrect: null },
     q2: { selectedKey: null, firstAttemptCorrect: null },
   },
 
-  setViewMode: (viewMode) => set({ viewMode }),
+  setViewMode: (viewMode) => set({ viewMode, autoPlay: false }),
 
   setScene: (sceneIndex, beatIndex = 0) => {
     const clampedScene = Math.max(0, Math.min(SCENES.length - 1, sceneIndex));
@@ -64,6 +71,8 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
       set({ beatIndex: beatIndex + 1 });
     } else if (sceneIndex < SCENES.length - 1) {
       set({ sceneIndex: sceneIndex + 1, beatIndex: 0 });
+    } else {
+      set({ autoPlay: false });
     }
   },
 
@@ -78,10 +87,16 @@ export const usePresentationStore = create<PresentationState>((set, get) => ({
   },
 
   toggleTheme: () => {
-    const nextTheme: ThemeMode = get().theme === 'light' ? 'dark' : 'light';
+    const nextTheme: ThemeMode = get().theme === 'dark' ? 'light' : 'dark';
     applyThemeToDom(nextTheme);
     set({ theme: nextTheme });
   },
+
+  toggleCoach: () => set((s) => ({ coachEnabled: !s.coachEnabled })),
+
+  setAutoPlay: (autoPlay) => set({ autoPlay }),
+
+  toggleAutoPlay: () => set((s) => ({ autoPlay: !s.autoPlay })),
 
   answerQuiz: (quizId, key, isCorrect) => {
     const current = get().quizzes[quizId];

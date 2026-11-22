@@ -20,7 +20,7 @@ export function ConvergenceSvg({
   series,
   referenceLine,
   xLabel,
-  height = 175,
+  height = 170,
   title,
 }: ConvergenceSvgProps) {
   const W = 920;
@@ -44,17 +44,12 @@ export function ConvergenceSvg({
 
   const toX = (x: number) => L + (x / maxX) * (W - L - R);
   const toY = (y: number) => T + ((hiY - y) / Math.max(1e-6, hiY - loY)) * (H - T - B);
-
   const ticks = [0, 1, 2, 3].map((k) => loY + ((hiY - loY) * k) / 3);
 
   return (
-    <div className="transit-card flex flex-col gap-2 p-3.5">
+    <div className="studio-panel flex flex-col gap-2 p-3.5">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        {title && (
-          <span className="font-mono-tabular text-xs font-bold uppercase tracking-wider text-[var(--ink-secondary)]">
-            {title}
-          </span>
-        )}
+        {title && <span className="text-xs font-bold text-[var(--ink-secondary)]">{title}</span>}
         <div className="flex flex-wrap items-center gap-3 text-xs font-semibold">
           {series.map((s) => {
             const last = s.points[s.points.length - 1];
@@ -104,7 +99,7 @@ export function ConvergenceSvg({
               x2={W - R}
               y1={toY(val)}
               y2={toY(val)}
-              stroke="var(--border-subtle)"
+              stroke="var(--border-line)"
               strokeWidth="1"
             />
             <text
@@ -144,17 +139,17 @@ export function ConvergenceSvg({
                 d={d}
                 fill="none"
                 stroke={s.color}
-                strokeWidth="3"
+                strokeWidth="3.2"
                 strokeLinejoin="round"
                 strokeLinecap="round"
-                strokeDasharray={s.dashed ? '7 5' : undefined}
+                strokeDasharray={s.dashed ? '8 5' : undefined}
               />
               <circle
                 cx={toX(last.x)}
                 cy={toY(last.y)}
-                r="4.5"
+                r="5"
                 fill={s.color}
-                stroke="var(--bg-elevated)"
+                stroke="var(--bg-panel)"
                 strokeWidth="2"
               />
             </g>

@@ -1,6 +1,6 @@
 /**
- * Sumber kebenaran seluruh teks materi presentasi 8 menit (5 Adegan + 2 Kuis Singkat),
- * narasi beat, identitas Kelompok 4 Kelas C ITS, dan referensi ringkas.
+ * Sumber kebenaran seluruh teks materi presentasi animasi 8 menit (5 Episode + 2 Kuis),
+ * narasi subtitle per beat, arahan pemandu kursor, identitas Kelompok 4 ITS, dan referensi ringkas.
  */
 
 export interface SceneMeta {
@@ -9,6 +9,8 @@ export interface SceneMeta {
   shortTitle: string;
   title: string;
   minutes: string;
+  /** Durasi auto-play per beat (ms) pada Mode Video */
+  beatDurationMs: readonly number[];
   beats: readonly string[];
 }
 
@@ -39,55 +41,60 @@ export const SCENES: readonly SceneMeta[] = [
     shortTitle: 'Masalah & Why',
     title: 'Kenapa pembagian task ke server cloud butuh Hybrid?',
     minutes: '1,5 mnt',
+    beatDurationMs: [9000, 14000, 10000],
     beats: [
-      'Selamat datang! Hari ini kita bahas Hybrid Simulated Annealing + 2-Opt dalam 8 menit: SA menjelajah luas, 2-Opt merapikan kusutnya.',
-      'Coba sendiri! Klik task di rak VM2 yang kepanasan lalu pindahkan ke VM lain supaya waktu selesai terakhir (Makespan) sekecil mungkin.',
-      'Di eksperimen CloudSim kita kemarin, SA murni sudah unggul di GoCJ, tetapi masih timpang di 1000 task dan tidak stabil di NASA. Di sinilah SA butuh partner.',
+      'Tonton alirannya: paket task masuk ke server DC Jakarta & Surabaya. Hybrid SA + 2-Opt menggabungkan jelajah luas SA dan polesan cepat 2-Opt.',
+      'Giliran kamu mencoba! Ikuti tangan pemandu untuk klik paket di server VM 2 yang berasap agar Makespan turun ke 9 detik.',
+      'Di eksperimen CloudSim kita kemarin, SA murni sudah unggul di GoCJ, tetapi masih timpang di 1000 task dan goyang di NASA. Karena itu SA butuh partner.',
     ],
   },
   {
     id: 'sa',
     number: '02',
     shortTitle: 'Dasar SA',
-    title: 'Simulated Annealing: panas untuk nekat, dingin untuk kunci.',
+    title: 'Simulated Annealing: panas untuk melompat, dingin untuk mengunci.',
     minutes: '1,5 mnt',
+    beatDurationMs: [12000, 14000],
     beats: [
-      'SA meniru pendinginan logam. Saat suhu masih panas, SA berani mencoba langkah yang sementara lebih buruk agar tidak terjebak di solusi tanggung (local optimum).',
-      'Geser slider Suhu T dan kenaikan beban ΔE, lalu lempar dadu r. Lihat bagaimana peluang menerima langkah mundur mengecil saat suhu makin dingin.',
+      'Lihat animasi bola di pegunungan: bola abu-abu (greedy) terjebak di lembah dangkal, sedangkan bola panas SA melompati bukit menuju lembah terdalam.',
+      'Sekarang kendalikan sendiri! Ikuti pemandu untuk ubah Suhu T dan lempar dadu r agar merasakan logika Metropolis P = exp(-ΔE/T).',
     ],
   },
   {
     id: 'two-opt',
     number: '03',
     shortTitle: '2-Opt & Kuis 1',
-    title: '2-Opt: luruskan jalur bersilangan, ratakan beban VM.',
+    title: '2-Opt: lepas jalur silang, tukar beban server.',
     minutes: '1,5 mnt',
+    beatDurationMs: [12000, 12000, 12000],
     beats: [
-      '2-Opt (Croes, 1958) sangat sederhana: cari dua jalur yang bersilangan membentuk X, lalu lepas dan sambung ulang agar tidak bersilangan. Klik jalur silangnya!',
-      'Di Cloud Scheduling, logika yang sama dipakai untuk menukar pasangan task dari VM bottleneck (Pairwise Swap) atau membalik urutan antrean task (Permutasi + Decoder).',
-      'Cek pemahaman cepat 1/2 sebelum kita gabungkan SA dan 2-Opt.',
+      'Lihat titik cahaya mengalir di jalur yang bersilangan membentuk X. Klik tombol pemandu atau garis merahnya untuk melihat animasi 2-Opt meluruskan jalur!',
+      'Di Cloud Scheduling, logika yang sama menukar 2 task antara server panas dan longgar (Pairwise Swap) atau membalik urutan antrean task.',
+      'Cek pemahaman cepat 1/2 sebelum kita adu SA Murni melawan Hybrid SA + 2-Opt secara langsung!',
     ],
   },
   {
     id: 'hybrid-race',
     number: '04',
-    shortTitle: 'Hybrid Beraksi',
-    title: 'Hybrid SA + 2-Opt: eksplorasi global + polesan presisi.',
+    shortTitle: 'Hybrid Live',
+    title: 'Hybrid SA + 2-Opt: eksplorasi global + sapuan presisi.',
     minutes: '2,0 mnt',
+    beatDurationMs: [11000, 18000],
     beats: [
-      'Merujuk Gunawan & Iryanto (2023), 2-Opt disisipkan langsung di dalam inner loop SA (pola Low-level Relay / LRH): SA membuka wilayah baru, 2-Opt langsung merapikannya.',
-      'Tonton langsung perbedaannya! SA Murni dan Hybrid SA + 2-Opt dijalankan pada beban, seed, dan anggaran evaluasi yang persis sama.',
+      'Merujuk Gunawan & Iryanto (2023), 2-Opt dipanggil langsung di tiap langkah inner loop SA (pola Low-level Relay / LRH). Ikuti bola data berputar melewati 4 stasiun!',
+      'Tonton duel langsung! SA Murni (kiri) vs Hybrid SA + 2-Opt dengan sinar pemindai cyan (kanan) pada beban, seed, dan anggaran evaluasi yang persis sama.',
     ],
   },
   {
     id: 'perbandingan',
     number: '05',
-    shortTitle: 'Banding & Kuis 2',
+    shortTitle: 'Hasil & Kuis 2',
     title: 'Perbandingan adil dengan metode sebelumnya.',
     minutes: '1,5 mnt',
+    beatDurationMs: [12000, 14000],
     beats: [
-      'Bandingkan Hybrid SA + 2-Opt dengan SA Murni, Sufferage, dan JAYA. Data baseline diambil dari hasil CloudSim Kelompok 4, dan hasil hybrid tim siap dimuat lewat JSON.',
-      'Cek pemahaman cepat 2/2, rekap skor, dan referensi. Setelah ini, buka Sandbox Q&A untuk otak-atik bebas!',
+      'Bandingkan Hybrid SA + 2-Opt dengan SA Murni, Sufferage, dan JAYA dari baseline CloudSim Kelompok 4, plus tombol impor JSON hasil final tim.',
+      'Cek pemahaman 2/2, lihat skor akhir kamu, lalu buka Sandbox Q&A untuk eksperimen parameter bebas!',
     ],
   },
 ];
@@ -95,16 +102,17 @@ export const SCENES: readonly SceneMeta[] = [
 export const QUIZZES: Record<'q1' | 'q2', QuizQuestion> = {
   q1: {
     id: 'q1',
-    badge: 'KUIS CEPAT 1 / 2',
+    badge: 'Kuis Cepat 1 / 2',
     question:
-      'Mengapa 2-Opt saja tidak cukup kuat tanpa Simulated Annealing (SA) pada masalah penjadwalan cloud yang besar?',
+      'Mengapa 2-Opt saja tidak cukup kuat tanpa Simulated Annealing (SA) pada penjadwalan cloud berskala besar?',
     options: [
       {
         key: 'A',
-        label: 'Karena 2-Opt hanya mau menerima langkah yang lebih baik sehingga mudah terjebak di local optimum',
+        label:
+          'Karena 2-Opt hanya menerima langkah yang lebih baik sehingga mudah terjebak di local optimum',
         correct: true,
         feedback:
-          'Tepat! 2-Opt bersifat greedy lokal: cepat merapikan sekitar solusi, tetapi butuh SA agar bisa melompat keluar dari jebakan lokal.',
+          'Tepat! 2-Opt sangat tajam merapikan sekitar solusi, tetapi butuh lompatan panas SA agar bisa keluar dari jebakan lokal.',
       },
       {
         key: 'B',
@@ -115,14 +123,14 @@ export const QUIZZES: Record<'q1' | 'q2', QuizQuestion> = {
       },
       {
         key: 'C',
-        label: 'Karena 2-Opt selalu membutuhkan populasi 100 kandidat sekaligus',
+        label: 'Karena 2-Opt wajib memakai populasi 100 kandidat sekaligus',
         correct: false,
         feedback:
-          'Justru sebaliknya: baik SA maupun 2-Opt bekerja pada solusi tunggal (single-solution), bukan berbasis populasi besar.',
+          'Sebaliknya, baik SA maupun 2-Opt bekerja pada solusi tunggal (single-solution), bukan berbasis populasi besar.',
       },
       {
         key: 'D',
-        label: 'Karena 2-Opt selalu lebih lambat daripada Round Robin dalam semua kasus',
+        label: 'Karena 2-Opt selalu lebih lambat daripada Round Robin di semua kasus',
         correct: false,
         feedback:
           'Round Robin memang instan karena tanpa optimasi, tetapi alasan utama menggabungkan SA + 2-Opt adalah meloloskan diri dari local optimum.',
@@ -131,34 +139,35 @@ export const QUIZZES: Record<'q1' | 'q2', QuizQuestion> = {
   },
   q2: {
     id: 'q2',
-    badge: 'KUIS CEPAT 2 / 2',
+    badge: 'Kuis Cepat 2 / 2',
     question:
-      'Agar perbandingan Hybrid SA + 2-Opt melawan SA Murni dianggap adil secara ilmiah, apa yang wajib disamakan?',
+      'Agar perbandingan Hybrid SA + 2-Opt melawan SA Murni adil secara ilmiah, apa yang wajib disamakan?',
     options: [
       {
         key: 'A',
         label: 'Cukup pakai 1 random seed yang hasilnya paling bagus untuk Hybrid',
         correct: false,
         feedback:
-          'Memilih 1 seed beruntung (cherry-picking) tidak adil. Algoritma stokastik wajib diuji minimal 10 seed lalu dilaporkan mean ± std.',
+          'Memilih 1 seed beruntung tidak adil. Algoritma stokastik wajib diuji minimal 10 seed lalu dilaporkan mean ± std.',
       },
       {
         key: 'B',
-        label: 'Anggaran fitness evaluation yang setara, dataset sama, uji multi-run, dan catat overhead waktu',
+        label:
+          'Anggaran fitness evaluation yang setara, dataset sama, uji multi-run, dan catat overhead waktu',
         correct: true,
         feedback:
-          'Benar sekali! 2-Opt menambah evaluasi di dalam tiap iterasi SA, jadi budget evaluasi harus dihitung jujur bersama waktu eksekusi scheduler.',
+          'Benar sekali! 2-Opt menambah evaluasi di tiap langkah SA, jadi budget evaluasi harus dihitung jujur bersama waktu eksekusi scheduler.',
       },
       {
         key: 'C',
         label: 'Cukup menyamakan jumlah iterasi luar tanpa menghitung evaluasi di dalam 2-Opt',
         correct: false,
         feedback:
-          'Menyamakan iterasi saja menipu karena 1 iterasi SA + 2-Opt bisa melakukan jauh lebih banyak evaluasi daripada 1 iterasi SA murni.',
+          'Menyamakan iterasi saja menipu karena 1 iterasi SA + 2-Opt melakukan lebih banyak evaluasi daripada 1 iterasi SA murni.',
       },
       {
         key: 'D',
-        label: 'Dataset untuk Hybrid boleh dibuat lebih kecil supaya cepat selesai',
+        label: 'Dataset untuk Hybrid boleh diperkecil agar lebih cepat selesai',
         correct: false,
         feedback:
           'Semua algoritma wajib diuji pada dataset Minggu 3 yang sama persis (GoCJ / NASA) agar perbandingan valid.',
@@ -174,7 +183,7 @@ export const PAPER_MENTION = {
   doi: '10.47839/ijc.22.1.2878',
   taxonomy: 'LRH (Low-level Relay Hybrid)',
   oneLineCore:
-    'Setiap state baru di dalam inner loop SA langsung dipoles oleh 2-Opt sebelum diuji dengan kriteria Metropolis. Hasil di paper: 1,2x hingga 5,7x lebih cepat dan lebih stabil dibanding SA murni.',
+    'Setiap kandidat di dalam inner loop SA langsung dipoles oleh 2-Opt sebelum diuji kriteria Metropolis. Hasil di paper: 1,2x hingga 5,7x lebih cepat dan lebih stabil dibanding SA murni.',
 } as const;
 
 export const REFERENCES = [

@@ -7,6 +7,7 @@ import { FAIR_CHECKLIST, QUIZZES, REFERENCES } from '../../data/content';
 import { KELOMPOK4_VERIFIED_BASELINES } from '../../data/kelompok4Baselines';
 import { formatId } from '../../lib/algorithms/rng';
 import { usePresentationStore } from '../../store/presentationStore';
+import { CoachMissionBanner, CoachTarget } from '../ui/GuidedCoach';
 import { QuizCard } from '../ui/QuizCard';
 
 interface Scene05Props {
@@ -28,7 +29,6 @@ export function Scene05CompareClosing({ beat = 0, exploreAll = false }: Scene05P
   const [checkedIds, setCheckedIds] = useState<string[]>(['ablation', 'budget']);
   const [importState, setImportState] = useState<ImportState>({ status: 'loading' });
 
-  // Memuat file bawaan public/data/cloudsim-hybrid.json (menghormati base path GitHub Pages)
   const loadBundledJson = async () => {
     setImportState({ status: 'loading' });
     try {
@@ -83,8 +83,7 @@ export function Scene05CompareClosing({ beat = 0, exploreAll = false }: Scene05P
     } catch {
       setImportState({
         status: 'error',
-        message:
-          'Format JSON tidak valid. Pastikan file merupakan JSON hasil CloudSim yang sesuai skema.',
+        message: 'Format JSON tidak valid. Pastikan file sesuai skema hasil CloudSim tim.',
       });
     } finally {
       e.target.value = '';
@@ -108,7 +107,6 @@ export function Scene05CompareClosing({ beat = 0, exploreAll = false }: Scene05P
     (r) => r.algorithm === 'SA+2Opt' || r.algorithm === 'DJAYA+2Opt',
   );
 
-  // Gabungkan baris untuk tampilan perbandingan
   const displayRows = [
     ...(hybridRows ?? []).map((r) => ({
       key: r.algorithm,
@@ -137,28 +135,30 @@ export function Scene05CompareClosing({ beat = 0, exploreAll = false }: Scene05P
   const scoreCount = [quizzes.q1.firstAttemptCorrect, quizzes.q2.firstAttemptCorrect].filter(
     (v) => v === true,
   ).length;
+  const q2Done = quizzes.q2.selectedKey !== null;
 
   const showBeat0 = exploreAll || beat === 0;
   const showBeat1 = exploreAll || beat === 1;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5">
       {/* BEAT 0: Perbandingan Fair + Slot Impor JSON CloudSim Tim */}
       {showBeat0 && (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3.5">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
               <h2 className="font-display text-2xl font-extrabold sm:text-3xl">
-                Perbandingan: <span className="marker-highlight">Hybrid vs Metode Sebelumnya</span>
+                Perbandingan:{' '}
+                <span style={{ color: 'var(--ok-mint)' }}>Hybrid vs Metode Sebelumnya</span>
               </h2>
               <p className="mt-1 text-sm text-[var(--ink-secondary)]">
-                Baseline nyata dari eksperimen CloudSim Kelompok 4 (Sufferage, JAYA, SA Murni) +
-                slot siap muat untuk hasil Hybrid tim.
+                Baseline nyata dari CloudSim Kelompok 4 (Sufferage, JAYA, SA Murni) + tombol impor
+                JSON untuk hasil simulasi Hybrid tim.
               </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              <label className="btn-transit btn-transit-rail cursor-pointer text-xs">
+              <label className="btn-studio btn-studio-cyan cursor-pointer text-xs">
                 Impor JSON CloudSim
                 <input
                   type="file"
@@ -171,7 +171,7 @@ export function Scene05CompareClosing({ beat = 0, exploreAll = false }: Scene05P
                 <button
                   type="button"
                   onClick={() => void loadBundledJson()}
-                  className="btn-transit text-xs"
+                  className="btn-studio text-xs"
                 >
                   Reset Data Bawaan
                 </button>
@@ -179,41 +179,53 @@ export function Scene05CompareClosing({ beat = 0, exploreAll = false }: Scene05P
             </div>
           </div>
 
-          {/* Pemilih Skenario Minggu 3 Kelompok 4 */}
-          <div className="flex flex-wrap gap-1.5">
+          <CoachMissionBanner
+            stepLabel="Pemandu · Bandingkan Skenario"
+            instruction="Coba klik tab 'NASA Ames 750 Job × 50 VM' untuk melihat deviasi SA murni yang sangat besar dibanding skenario GoCJ."
+            completed={scenarioId === 'nasa-750x50'}
+            doneMessage="Terlihat jelas! Di NASA, variansi SA murni mencapai ±66.963 s. Begitu tim selesai simulasi CloudSim, file JSON bisa diunggah lewat tombol biru."
+          />
+
+          <div className="flex flex-wrap gap-2">
             {KELOMPOK4_VERIFIED_BASELINES.map((sc) => {
               const active = sc.id === scenarioId;
-              return (
+              const isNasaGuide = sc.id === 'nasa-750x50' && scenarioId !== 'nasa-750x50';
+              const btn = (
                 <button
-                  key={sc.id}
                   type="button"
                   onClick={() => setScenarioId(sc.id)}
-                  className="font-mono-tabular min-h-[38px] rounded-lg border-2 px-3 py-1 text-xs font-bold"
+                  className="font-mono-tabular min-h-[38px] rounded-xl border px-3 py-1 text-xs font-bold transition-colors"
                   style={{
-                    borderColor: active ? 'var(--border-ink)' : 'var(--border-subtle)',
-                    backgroundColor: active ? 'var(--focus-signal)' : 'var(--bg-elevated)',
-                    color: active ? 'var(--focus-signal-ink)' : 'var(--ink-primary)',
+                    borderColor: active ? 'var(--opt-cyan)' : 'var(--border-line)',
+                    backgroundColor: active ? 'var(--opt-cyan-soft)' : 'var(--bg-panel)',
+                    color: active ? 'var(--opt-cyan)' : 'var(--ink-primary)',
                   }}
                 >
                   {sc.name}
                 </button>
               );
+
+              return isNasaGuide ? (
+                <CoachTarget key={sc.id} active label="Coba cek NASA" position="top">
+                  {btn}
+                </CoachTarget>
+              ) : (
+                <div key={sc.id}>{btn}</div>
+              );
             })}
           </div>
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.35fr_1fr]">
-            {/* Tabel & Bar Perbandingan */}
-            <div className="transit-card flex flex-col gap-3 p-4">
-              {/* Status Slot Data CloudSim Hybrid (Loading / Placeholder / Error / Loaded) */}
+            <div className="studio-panel flex flex-col gap-3 p-4">
               {importState.status === 'loading' && (
-                <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3 py-2 text-xs font-semibold">
+                <div className="rounded-xl bg-[var(--bg-inset)] px-3 py-2 text-xs font-semibold">
                   Memuat berkas hasil CloudSim Hybrid...
                 </div>
               )}
               {importState.status === 'error' && (
                 <div
                   role="alert"
-                  className="rounded-lg border-2 px-3 py-2 text-xs font-semibold"
+                  className="rounded-xl border px-3 py-2 text-xs font-semibold"
                   style={{
                     borderColor: 'var(--sa-heat)',
                     backgroundColor: 'var(--sa-heat-soft)',
@@ -225,53 +237,51 @@ export function Scene05CompareClosing({ beat = 0, exploreAll = false }: Scene05P
               )}
               {importState.status === 'placeholder' && (
                 <div
-                  className="rounded-lg border-2 border-dashed px-3 py-2 text-xs leading-relaxed"
+                  className="rounded-xl border border-dashed px-3 py-2 text-xs leading-relaxed"
                   style={{
-                    borderColor: 'var(--opt-rail)',
-                    backgroundColor: 'var(--opt-rail-soft)',
+                    borderColor: 'var(--opt-cyan)',
+                    backgroundColor: 'var(--opt-cyan-soft)',
                   }}
                 >
-                  <strong className="font-mono-tabular text-[var(--opt-rail)]">
+                  <strong className="font-mono-tabular" style={{ color: 'var(--opt-cyan)' }}>
                     [MENUNGGU DATA CLOUDSIM TIM]
                   </strong>{' '}
                   Angka CloudSim untuk <strong>SA + 2-Opt</strong> & <strong>DJAYA + 2-Opt</strong>{' '}
-                  tidak dikarang. Begitu simulasi Java selesai, unggah file JSON lewat tombol{' '}
-                  <em>Impor JSON CloudSim</em> di atas (uji langsung versi live-nya ada di Sandbox
-                  Q&A).
+                  tidak dikarang. Unggah file JSON hasil Java tim lewat tombol{' '}
+                  <em>Impor JSON CloudSim</em> kapan saja.
                 </div>
               )}
               {importState.status === 'loaded' && (
                 <div
-                  className="rounded-lg border-2 px-3 py-2 text-xs font-semibold"
+                  className="rounded-xl border px-3 py-2 text-xs font-semibold"
                   style={{
-                    borderColor: 'var(--ok-balance)',
-                    backgroundColor: 'var(--ok-balance-soft)',
-                    color: 'var(--ok-balance)',
+                    borderColor: 'var(--ok-mint)',
+                    backgroundColor: 'var(--ok-mint-soft)',
+                    color: 'var(--ok-mint)',
                   }}
                 >
                   Data CloudSim aktif: {importState.dataset.sourceLabel}
                 </div>
               )}
 
-              {/* Grafik Bar Horizontal Makespan + ARU/DOI */}
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-2.5">
                 {displayRows.map((row) => (
                   <div
                     key={row.key}
-                    className="grid grid-cols-[140px_1fr_102px] items-center gap-2 text-xs"
+                    className="grid grid-cols-[140px_1fr_104px] items-center gap-2 text-xs"
                   >
                     <span className="truncate font-bold">{row.label}</span>
-                    <div className="h-5 overflow-hidden rounded-md bg-[var(--bg-muted)]">
+                    <div className="h-5 overflow-hidden rounded-full bg-[var(--bg-inset)]">
                       <div
-                        className="h-full rounded-md transition-all duration-300"
+                        className="h-full rounded-full transition-all duration-500"
                         style={{
                           width: `${Math.max(4, (row.makespanMean / maxMakespan) * 100)}%`,
                           backgroundColor: row.isHybrid
-                            ? 'var(--ok-balance)'
+                            ? 'var(--ok-mint)'
                             : row.key === 'SA'
                               ? 'var(--sa-heat)'
                               : row.key === 'Sufferage'
-                                ? 'var(--opt-rail)'
+                                ? 'var(--opt-cyan)'
                                 : 'var(--ink-secondary)',
                         }}
                       />
@@ -291,64 +301,57 @@ export function Scene05CompareClosing({ beat = 0, exploreAll = false }: Scene05P
               <p className="m-0 text-xs text-[var(--ink-secondary)]">{activeBaseline.note}</p>
             </div>
 
-            {/* 4 Checklist Evaluasi Adil (Ringkas dari Slide 12 Dosen) */}
-            <div className="transit-card flex flex-col justify-between gap-3 p-4">
-              <div>
-                <div className="font-mono-tabular mb-2 text-xs font-bold uppercase text-[var(--ink-secondary)]">
-                  Checklist Eksperimen Adil (SOKA)
-                </div>
-                <div className="flex flex-col gap-2">
-                  {FAIR_CHECKLIST.map((item) => {
-                    const on = checkedIds.includes(item.id);
-                    return (
-                      <button
-                        key={item.id}
-                        type="button"
-                        onClick={() => toggleCheck(item.id)}
-                        aria-pressed={on}
-                        className="flex min-h-[44px] items-start gap-2.5 rounded-lg border-2 p-2.5 text-left transition-colors"
+            <div className="studio-panel flex flex-col gap-2.5 p-4">
+              <div className="text-xs font-bold text-[var(--ink-secondary)]">
+                Checklist Eksperimen Adil (SOKA)
+              </div>
+              <div className="flex flex-col gap-2">
+                {FAIR_CHECKLIST.map((item) => {
+                  const on = checkedIds.includes(item.id);
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => toggleCheck(item.id)}
+                      aria-pressed={on}
+                      className="flex min-h-[44px] items-start gap-2.5 rounded-xl border p-2.5 text-left transition-colors"
+                      style={{
+                        borderColor: on ? 'var(--ok-mint)' : 'var(--border-line)',
+                        backgroundColor: on ? 'var(--ok-mint-soft)' : 'var(--bg-inset)',
+                      }}
+                    >
+                      <span
+                        className="font-mono-tabular mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded text-xs font-bold"
                         style={{
-                          borderColor: on ? 'var(--ok-balance)' : 'var(--border-subtle)',
-                          backgroundColor: on ? 'var(--ok-balance-soft)' : 'var(--bg-surface)',
+                          backgroundColor: on ? 'var(--ok-mint)' : 'var(--bg-panel)',
+                          color: on ? 'var(--on-mint)' : 'var(--ink-secondary)',
                         }}
                       >
-                        <span
-                          className="font-mono-tabular mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border text-xs font-bold"
-                          style={{
-                            borderColor: 'var(--border-ink)',
-                            backgroundColor: on ? 'var(--focus-signal)' : 'var(--bg-elevated)',
-                            color: 'var(--focus-signal-ink)',
-                          }}
-                        >
-                          {on ? '✓' : ''}
-                        </span>
-                        <span>
-                          <strong className="block text-xs">{item.title}</strong>
-                          <span className="text-[11px] text-[var(--ink-secondary)]">
-                            {item.desc}
-                          </span>
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
+                        {on ? '✓' : ''}
+                      </span>
+                      <span>
+                        <strong className="block text-xs">{item.title}</strong>
+                        <span className="text-[11px] text-[var(--ink-secondary)]">{item.desc}</span>
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* BEAT 1: Quiz 2/2 + Skor + Referensi Ringkas + CTA Sandbox Q&A */}
+      {/* BEAT 1: Quiz 2/2 + Skor Akhir + Referensi + CTA Sandbox Q&A */}
       {showBeat1 && (
         <div className="flex flex-col gap-4">
           <QuizCard quiz={QUIZZES.q2} compact />
 
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[0.85fr_1.4fr]">
-            {/* Rekap Skor & CTA Sandbox */}
-            <div className="transit-card flex flex-col justify-between gap-3 p-4">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[0.88fr_1.35fr]">
+            <div className="studio-panel flex flex-col justify-between gap-3 p-4">
               <div>
-                <div className="font-mono-tabular text-xs font-bold uppercase text-[var(--ink-secondary)]">
-                  Rekap Skor Kuis (Percobaan 1)
+                <div className="text-xs font-bold text-[var(--ink-secondary)]">
+                  Skor Kuis Percobaan Pertama
                 </div>
                 <div className="font-display mt-1 text-5xl font-extrabold">
                   {scoreCount}
@@ -356,41 +359,48 @@ export function Scene05CompareClosing({ beat = 0, exploreAll = false }: Scene05P
                 </div>
                 <ul className="mt-2 flex list-disc flex-col gap-1 pl-4 text-xs font-semibold text-[var(--ink-secondary)]">
                   <li>
-                    <strong className="text-[var(--sa-heat)]">SA</strong> membuka eksplorasi global
-                    lewat suhu panas.
+                    <strong style={{ color: 'var(--sa-heat)' }}>SA</strong> membuka eksplorasi
+                    global lewat suhu panas.
                   </li>
                   <li>
-                    <strong className="text-[var(--opt-rail)]">2-Opt</strong> merapikan silangan &
-                    VM bottleneck di tiap langkah.
+                    <strong style={{ color: 'var(--opt-cyan)' }}>2-Opt</strong> merapikan silangan &
+                    beban VM bottleneck di tiap langkah.
                   </li>
                   <li>
-                    <strong className="text-[var(--ok-balance)]">Evaluasi adil</strong> wajib
-                    menyamakan budget evaluasi & multi-seed.
+                    <strong style={{ color: 'var(--ok-mint)' }}>Evaluasi adil</strong> menyamakan
+                    budget evaluasi & multi-seed.
                   </li>
                 </ul>
               </div>
 
-              <button
-                type="button"
-                onClick={() => setViewMode('sandbox')}
-                className="btn-transit btn-transit-signal w-full text-sm"
-              >
-                Buka Sandbox Q&A (Otak-Atik Parameter) →
-              </button>
+              <CoachTarget active={q2Done} label="Lanjut eksperimen bebas!" position="top" className="w-full">
+                <button
+                  type="button"
+                  onClick={() => setViewMode('sandbox')}
+                  className="btn-studio btn-studio-gold w-full text-sm"
+                >
+                  Buka Sandbox Q&A (Otak-Atik Parameter)
+                </button>
+              </CoachTarget>
             </div>
 
-            {/* Kartu Referensi Ringkas */}
-            <div className="transit-card flex flex-col gap-2.5 p-4">
-              <div className="font-mono-tabular text-xs font-bold uppercase text-[var(--ink-secondary)]">
+            <div className="studio-panel flex flex-col gap-2 p-4">
+              <div className="text-xs font-bold text-[var(--ink-secondary)]">
                 Referensi Ilmiah Utama
               </div>
               <div className="flex flex-col gap-2">
                 {REFERENCES.map((ref) => (
                   <div
                     key={ref.tag}
-                    className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3 py-2 text-xs leading-snug"
+                    className="rounded-xl border border-[var(--border-line)] bg-[var(--bg-inset)] px-3 py-2 text-xs leading-snug"
                   >
-                    <span className="font-mono-tabular mr-2 inline-block rounded bg-[var(--ink-primary)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--bg-surface)]">
+                    <span
+                      className="font-mono-tabular mr-2 inline-block rounded px-1.5 py-0.5 text-[10px] font-bold"
+                      style={{
+                        backgroundColor: 'var(--opt-cyan-soft)',
+                        color: 'var(--opt-cyan)',
+                      }}
+                    >
                       {ref.tag}
                     </span>
                     <span>{ref.text}</span>

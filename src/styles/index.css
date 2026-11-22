@@ -2,73 +2,84 @@
 @import "katex/dist/katex.min.css";
 
 /* ============================================================================
- * DESIGN TOKENS: Mini Metro Transit Network × Kurzgesagt Expressive Lab
- * 3 Core Colors (SA Heat, 2-Opt Rail, Balanced Emerald) + 1 Focus Accent
- * Seluruh pasangan warna terverifikasi kontras WCAG AA pada Light & Dark Mode.
+ * DESIGN TOKENS: Kurzgesagt Animated Science Theater + Guided Cursor Coach
+ * Default: Midnight Theater (data-theme="dark") agar animasi bercahaya menonjol.
+ * Toggle: Daylight Studio (data-theme="light") untuk proyektor ruang sangat terang.
  * ============================================================================ */
 
-:root {
-  --bg-canvas: #e8e4da;
-  --bg-surface: #f7f5ef;
-  --bg-elevated: #ffffff;
-  --bg-muted: #edeae0;
+:root,
+[data-theme="dark"] {
+  --bg-canvas: #070b14;
+  --bg-stage: #0e1526;
+  --bg-panel: #162038;
+  --bg-inset: #1e2b4a;
 
-  --ink-primary: #181a20;
-  --ink-secondary: #4c515e;
-  --border-ink: #181a20;
-  --border-subtle: #d3cec2;
+  --ink-primary: #f3f6fc;
+  --ink-secondary: #b2c0d8;
+  --border-line: #2b3b5e;
+  --border-strong: #435a8a;
 
-  --sa-heat: #c83d12;
-  --sa-heat-soft: #fdebe4;
-  --opt-rail: #1756b0;
-  --opt-rail-soft: #e6f0fd;
-  --ok-balance: #157347;
-  --ok-balance-soft: #e3f5ec;
-  --focus-signal: #f4c430;
-  --focus-signal-ink: #181a20;
+  --sa-heat: #ff7a3d;
+  --sa-heat-soft: #361c15;
+  --on-heat: #1a0b04;
+  --opt-cyan: #38bdf8;
+  --opt-cyan-soft: #102b42;
+  --on-cyan: #06131f;
+  --ok-mint: #34d399;
+  --ok-mint-soft: #0f2e26;
+  --on-mint: #062018;
+  --coach-gold: #fbbf24;
+  --coach-ink: #0f172a;
+  --gold-text: #fbbf24;
+  --vm-block-ink: #08101c;
 
-  --vm-0: #1756b0;
-  --vm-1: #6f42c1;
-  --vm-2: #0f766e;
-  --vm-3: #b45309;
-  --vm-4: #be123c;
-  --vm-5: #334155;
+  --vm-0: #38bdf8;
+  --vm-1: #a78bfa;
+  --vm-2: #34d399;
+  --vm-3: #fb923c;
+  --vm-4: #f472b6;
+  --vm-5: #94a3b8;
 
   --font-display: "Bricolage Grotesque", system-ui, sans-serif;
   --font-body: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
 
-  color-scheme: light;
+  color-scheme: dark;
 }
 
-[data-theme="dark"] {
-  --bg-canvas: #0f1218;
-  --bg-surface: #171b24;
-  --bg-elevated: #202633;
-  --bg-muted: #262d3d;
+[data-theme="light"] {
+  --bg-canvas: #e3ecf6;
+  --bg-stage: #f8fbff;
+  --bg-panel: #ffffff;
+  --bg-inset: #edf3fa;
 
-  --ink-primary: #f3f2ec;
-  --ink-secondary: #b0b6c4;
-  --border-ink: #4b5568;
-  --border-subtle: #2e3545;
+  --ink-primary: #0f172a;
+  --ink-secondary: #475569;
+  --border-line: #c7d6e8;
+  --border-strong: #64748b;
 
-  --sa-heat: #f97046;
-  --sa-heat-soft: #3a1f18;
-  --opt-rail: #63a4ff;
-  --opt-rail-soft: #182b47;
-  --ok-balance: #3edb8b;
-  --ok-balance-soft: #133124;
-  --focus-signal: #f4c430;
-  --focus-signal-ink: #181a20;
+  --sa-heat: #b8380a;
+  --sa-heat-soft: #fff1eb;
+  --on-heat: #ffffff;
+  --opt-cyan: #0369a1;
+  --opt-cyan-soft: #e8f5fe;
+  --on-cyan: #ffffff;
+  --ok-mint: #047857;
+  --ok-mint-soft: #e6f8f1;
+  --on-mint: #ffffff;
+  --coach-gold: #f5b700;
+  --coach-ink: #0f172a;
+  --gold-text: #92400e;
+  --vm-block-ink: #ffffff;
 
-  --vm-0: #63a4ff;
-  --vm-1: #b48cff;
-  --vm-2: #34d399;
-  --vm-3: #f59e0b;
-  --vm-4: #fb7185;
-  --vm-5: #94a3b8;
+  --vm-0: #0369a1;
+  --vm-1: #6d28d9;
+  --vm-2: #047857;
+  --vm-3: #b45309;
+  --vm-4: #be123c;
+  --vm-5: #334155;
 
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 *,
@@ -100,125 +111,203 @@ h3,
   font-variant-numeric: tabular-nums;
 }
 
-/* Penekanan kata kunci bergaya marker transit */
-.marker-highlight {
-  background: linear-gradient(transparent 58%, var(--focus-signal) 58%);
-  color: var(--ink-primary);
-  padding: 0 4px;
-  border-radius: 3px;
+/* Permukaan teater animasi & panel modern (bukan bingkai kertas hitam) */
+.theater-stage {
+  background-color: var(--bg-stage);
+  border: 1px solid var(--border-line);
+  border-radius: 22px;
+  box-shadow: 0 24px 60px rgba(3, 8, 20, 0.32);
 }
 
-[data-theme="dark"] .marker-highlight {
-  background: var(--focus-signal);
-  color: var(--focus-signal-ink);
-  padding: 0 5px;
+[data-theme="light"] .theater-stage {
+  box-shadow: 0 18px 46px rgba(15, 23, 42, 0.08);
 }
 
-/* Panel berbingkai tinta tegas ala peta Mini Metro */
-.transit-card {
-  background-color: var(--bg-elevated);
-  border: 2px solid var(--border-ink);
-  border-radius: 14px;
-}
-
-.transit-surface {
-  background-color: var(--bg-surface);
-  border: 2px solid var(--border-ink);
+.studio-panel {
+  background-color: var(--bg-panel);
+  border: 1px solid var(--border-line);
   border-radius: 16px;
 }
 
-/* Tombol taktil berkarakter */
-.btn-transit {
+/* Tombol interaktif studio */
+.btn-studio {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   min-height: 44px;
-  padding: 8px 16px;
-  border-radius: 9px;
-  border: 2px solid var(--border-ink);
-  background-color: var(--bg-elevated);
+  padding: 9px 16px;
+  border-radius: 11px;
+  border: 1.5px solid var(--border-strong);
+  background-color: var(--bg-panel);
   color: var(--ink-primary);
   font-family: var(--font-body);
   font-weight: 700;
-  font-size: 0.92rem;
+  font-size: 0.9rem;
   cursor: pointer;
-  transition: transform 140ms ease, box-shadow 140ms ease, background-color 140ms ease;
+  transition: transform 160ms ease, background-color 160ms ease, border-color 160ms ease;
 }
 
-.btn-transit:hover:not(:disabled) {
-  transform: translate(-1.5px, -1.5px);
-  box-shadow: 3px 3px 0 var(--border-ink);
+.btn-studio:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: var(--opt-cyan);
+  background-color: var(--bg-inset);
 }
 
-.btn-transit:active:not(:disabled) {
-  transform: translate(0, 0);
-  box-shadow: none;
-}
-
-.btn-transit:disabled {
-  opacity: 0.4;
+.btn-studio:disabled {
+  opacity: 0.42;
   cursor: not-allowed;
 }
 
-.btn-transit-primary {
-  background-color: var(--ink-primary);
-  color: var(--bg-surface);
-  border-color: var(--ink-primary);
+.btn-studio-cyan {
+  background-color: var(--opt-cyan);
+  color: #06131f;
+  border-color: transparent;
 }
 
-.btn-transit-heat {
+[data-theme="light"] .btn-studio-cyan {
+  color: #ffffff;
+}
+
+.btn-studio-cyan:hover:not(:disabled) {
+  filter: brightness(1.08);
+  background-color: var(--opt-cyan);
+}
+
+.btn-studio-heat {
   background-color: var(--sa-heat);
+  color: #1a0b04;
+  border-color: transparent;
+}
+
+[data-theme="light"] .btn-studio-heat {
   color: #ffffff;
-  border-color: var(--border-ink);
 }
 
-[data-theme="dark"] .btn-transit-heat {
-  color: #181a20;
+.btn-studio-heat:hover:not(:disabled) {
+  filter: brightness(1.08);
+  background-color: var(--sa-heat);
 }
 
-.btn-transit-rail {
-  background-color: var(--opt-rail);
-  color: #ffffff;
-  border-color: var(--border-ink);
+.btn-studio-gold {
+  background-color: var(--coach-gold);
+  color: var(--coach-ink);
+  border-color: transparent;
 }
 
-[data-theme="dark"] .btn-transit-rail {
-  color: #10141c;
+.btn-studio-gold:hover:not(:disabled) {
+  filter: brightness(1.05);
+  background-color: var(--coach-gold);
 }
 
-.btn-transit-signal {
-  background-color: var(--focus-signal);
-  color: var(--focus-signal-ink);
-  border-color: var(--border-ink);
-}
-
-/* Fokus keyboard yang jelas (R-32) */
+/* Fokus keyboard jelas (R-32) */
 button:focus-visible,
 a:focus-visible,
 input:focus-visible,
 select:focus-visible,
 [tabindex]:focus-visible {
-  outline: 3px solid var(--opt-rail);
+  outline: 3px solid var(--coach-gold);
   outline-offset: 2px;
 }
 
-/* Range slider taktil */
-input[type="range"].transit-range {
+input[type="range"].studio-range {
   accent-color: var(--sa-heat);
   height: 6px;
   cursor: pointer;
 }
 
-/* Rak VM bottleneck (sentuhan ekspresif Kurzgesagt tanpa loop berkedip mengganggu) */
-.vm-rack-hot {
-  background-color: var(--sa-heat-soft);
-  border-color: var(--sa-heat) !important;
+/* ============================================================================
+ * CHOREOGRAPHED ANIMATIONS (MOTION 3 - Semua bermakna untuk pemahaman algoritma)
+ * ============================================================================ */
+
+@keyframes stageFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.992);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
-.vm-rack-cool {
-  background-color: var(--ok-balance-soft);
-  border-color: var(--ok-balance) !important;
+.stage-enter {
+  animation: stageFadeIn 320ms cubic-bezier(0.22, 0.8, 0.3, 1);
+}
+
+/* Pointer kursor pemandu mengayun lembut menunjuk target klik */
+@keyframes coachNudge {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(-5px, -5px);
+  }
+}
+
+.coach-pointer {
+  animation: coachNudge 1.15s ease-in-out infinite;
+}
+
+/* Ring penanda target aktif pemandu (maks 1 target aktif di layar pada satu waktu) */
+@keyframes coachRing {
+  0% {
+    box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.65);
+  }
+  70% {
+    box-shadow: 0 0 0 9px rgba(251, 191, 36, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(251, 191, 36, 0);
+  }
+}
+
+.coach-halo {
+  box-shadow: 0 0 0 2.5px var(--coach-gold);
+  animation: coachRing 1.7s ease-out infinite;
+}
+
+/* Uap panas naik dari rak server bottleneck */
+@keyframes steamRise {
+  0% {
+    transform: translateY(4px) scale(0.85);
+    opacity: 0;
+  }
+  35% {
+    opacity: 0.78;
+  }
+  100% {
+    transform: translateY(-14px) scale(1.15);
+    opacity: 0;
+  }
+}
+
+.steam-puff-1 {
+  animation: steamRise 1.6s ease-out infinite;
+}
+
+.steam-puff-2 {
+  animation: steamRise 1.6s ease-out 0.65s infinite;
+}
+
+/* Sinar pemindai 2-Opt menyapu rak saat hybrid memoles */
+@keyframes sweepScan {
+  0% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.65;
+  }
+  100% {
+    transform: translateX(320%);
+    opacity: 0;
+  }
+}
+
+.twoopt-scan-beam {
+  animation: sweepScan 900ms cubic-bezier(0.22, 0.8, 0.3, 1);
 }
 
 /* KaTeX readability */
@@ -226,30 +315,18 @@ input[type="range"].transit-range {
   font-size: 1.05em;
 }
 
-/* Transisi masuk panggung ringan */
-@keyframes sceneReveal {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.scene-enter {
-  animation: sceneReveal 240ms cubic-bezier(0.22, 0.8, 0.3, 1);
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .scene-enter {
-    animation: none;
+  .stage-enter,
+  .coach-pointer,
+  .coach-halo,
+  .steam-puff-1,
+  .steam-puff-2,
+  .twoopt-scan-beam {
+    animation: none !important;
   }
   *,
   *::before,
   *::after {
     transition-duration: 0.01ms !important;
-    animation-duration: 0.01ms !important;
   }
 }

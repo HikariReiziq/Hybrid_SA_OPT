@@ -1,5 +1,6 @@
 import { type QuizQuestion } from '../../data/content';
 import { usePresentationStore } from '../../store/presentationStore';
+import { CoachMissionBanner } from './GuidedCoach';
 
 interface QuizCardProps {
   quiz: QuizQuestion;
@@ -14,38 +15,15 @@ export function QuizCard({ quiz, compact = false }: QuizCardProps) {
 
   return (
     <div
-      className={`transit-card flex flex-col gap-3 ${compact ? 'p-4' : 'p-5 md:p-6'}`}
+      className={`studio-panel flex flex-col gap-3 ${compact ? 'p-4' : 'p-5 md:p-6'}`}
       aria-label={quiz.badge}
     >
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <span
-          className="font-mono-tabular inline-block rounded-md px-2.5 py-1 text-xs font-bold tracking-wide"
-          style={{
-            backgroundColor: 'var(--ink-primary)',
-            color: 'var(--bg-surface)',
-          }}
-        >
-          {quiz.badge}
-        </span>
-        {record.firstAttemptCorrect !== null && (
-          <span
-            className="font-mono-tabular rounded-md border px-2 py-0.5 text-xs font-bold"
-            style={{
-              borderColor: record.firstAttemptCorrect
-                ? 'var(--ok-balance)'
-                : 'var(--sa-heat)',
-              backgroundColor: record.firstAttemptCorrect
-                ? 'var(--ok-balance-soft)'
-                : 'var(--sa-heat-soft)',
-              color: record.firstAttemptCorrect ? 'var(--ok-balance)' : 'var(--sa-heat)',
-            }}
-          >
-            {record.firstAttemptCorrect
-              ? 'Percobaan 1: Benar'
-              : 'Percobaan 1: Masih mencoba'}
-          </span>
-        )}
-      </div>
+      <CoachMissionBanner
+        stepLabel={quiz.badge}
+        instruction="Pilih salah satu kartu jawaban A, B, C, atau D untuk langsung melihat pembahasannya."
+        completed={Boolean(selectedOption?.correct)}
+        doneMessage="Mantap! Jawaban kamu benar dan poin sudah masuk ke skor akhir."
+      />
 
       <h3 className="font-display text-lg font-extrabold leading-snug md:text-xl">
         {quiz.question}
@@ -56,14 +34,14 @@ export function QuizCard({ quiz, compact = false }: QuizCardProps) {
           const isPicked = record.selectedKey === opt.key;
           const borderStyle = isPicked
             ? opt.correct
-              ? 'var(--ok-balance)'
+              ? 'var(--ok-mint)'
               : 'var(--sa-heat)'
-            : 'var(--border-ink)';
+            : 'var(--border-line)';
           const bgStyle = isPicked
             ? opt.correct
-              ? 'var(--ok-balance-soft)'
+              ? 'var(--ok-mint-soft)'
               : 'var(--sa-heat-soft)'
-            : 'var(--bg-surface)';
+            : 'var(--bg-inset)';
 
           return (
             <button
@@ -71,7 +49,7 @@ export function QuizCard({ quiz, compact = false }: QuizCardProps) {
               type="button"
               onClick={() => answerQuiz(quiz.id, opt.key, opt.correct)}
               aria-pressed={isPicked}
-              className="flex min-h-[48px] items-start gap-3 rounded-xl border-2 px-3.5 py-3 text-left transition-transform duration-150 hover:-translate-y-0.5"
+              className="flex min-h-[50px] items-start gap-3 rounded-xl border-2 px-3.5 py-3 text-left transition-transform duration-150 hover:-translate-y-0.5"
               style={{
                 borderColor: borderStyle,
                 backgroundColor: bgStyle,
@@ -79,11 +57,14 @@ export function QuizCard({ quiz, compact = false }: QuizCardProps) {
               }}
             >
               <span
-                className="font-mono-tabular mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md border text-xs font-bold"
+                className="font-mono-tabular mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-xs font-extrabold"
                 style={{
-                  borderColor: borderStyle,
-                  backgroundColor: isPicked ? borderStyle : 'var(--bg-elevated)',
-                  color: isPicked ? '#ffffff' : 'var(--ink-primary)',
+                  backgroundColor: isPicked ? borderStyle : 'var(--bg-panel)',
+                  color: isPicked
+                    ? opt.correct
+                      ? 'var(--on-mint)'
+                      : 'var(--on-heat)'
+                    : 'var(--ink-primary)',
                 }}
               >
                 {opt.key}
@@ -97,14 +78,14 @@ export function QuizCard({ quiz, compact = false }: QuizCardProps) {
       <div
         role="status"
         aria-live="polite"
-        className="rounded-lg border px-3.5 py-2.5 text-sm leading-relaxed"
+        className="rounded-xl border px-3.5 py-2.5 text-sm leading-relaxed"
         style={{
           borderColor: selectedOption
             ? selectedOption.correct
-              ? 'var(--ok-balance)'
+              ? 'var(--ok-mint)'
               : 'var(--sa-heat)'
-            : 'var(--border-subtle)',
-          backgroundColor: 'var(--bg-surface)',
+            : 'var(--border-line)',
+          backgroundColor: 'var(--bg-stage)',
           color: 'var(--ink-secondary)',
         }}
       >
@@ -112,7 +93,7 @@ export function QuizCard({ quiz, compact = false }: QuizCardProps) {
           <>
             <strong
               style={{
-                color: selectedOption.correct ? 'var(--ok-balance)' : 'var(--sa-heat)',
+                color: selectedOption.correct ? 'var(--ok-mint)' : 'var(--sa-heat)',
               }}
             >
               {selectedOption.correct ? 'Benar. ' : 'Belum tepat. '}
@@ -120,7 +101,7 @@ export function QuizCard({ quiz, compact = false }: QuizCardProps) {
             <span style={{ color: 'var(--ink-primary)' }}>{selectedOption.feedback}</span>
           </>
         ) : (
-          'Pilih salah satu jawaban A, B, C, atau D untuk langsung melihat penjelasan.'
+          'Klik salah satu opsi di atas untuk menguji pemahamanmu.'
         )}
       </div>
     </div>

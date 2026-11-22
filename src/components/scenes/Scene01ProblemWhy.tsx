@@ -9,6 +9,8 @@ import {
 } from '../../lib/algorithms/cloudModel';
 import { formatId } from '../../lib/algorithms/rng';
 import { usePresentationStore } from '../../store/presentationStore';
+import { CloudFactoryCanvas } from '../ui/AnimatedCanvases';
+import { CoachMissionBanner, CoachTarget } from '../ui/GuidedCoach';
 import { VmRackGantt } from '../ui/VmRackGantt';
 
 interface Scene01Props {
@@ -18,6 +20,8 @@ interface Scene01Props {
 
 export function Scene01ProblemWhy({ beat = 0, exploreAll = false }: Scene01Props) {
   const setBeat = usePresentationStore((s) => s.setBeat);
+  const toggleAutoPlay = usePresentationStore((s) => s.toggleAutoPlay);
+
   const [assignment, setAssignment] = useState<number[]>(() => [...MINI_DISPATCH_INITIAL]);
   const [moves, setMoves] = useState(0);
 
@@ -26,6 +30,7 @@ export function Scene01ProblemWhy({ beat = 0, exploreAll = false }: Scene01Props
     () => evaluateSchedule(MINI_DISPATCH_PROBLEM, assignment),
     [assignment],
   );
+  const reachedOptimal = currentMetrics.makespan <= optimal.metrics.makespan;
 
   const handleTaskClick = (taskId: number) => {
     setAssignment((prev) => {
@@ -43,6 +48,7 @@ export function Scene01ProblemWhy({ beat = 0, exploreAll = false }: Scene01Props
 
   const applyOptimal = () => {
     setAssignment([...optimal.assignment]);
+    setMoves((m) => Math.max(1, m));
   };
 
   const showBeat0 = exploreAll || beat === 0;
@@ -52,200 +58,71 @@ export function Scene01ProblemWhy({ beat = 0, exploreAll = false }: Scene01Props
   const gocj1000 = KELOMPOK4_VERIFIED_BASELINES[1];
   const nasa750 = KELOMPOK4_VERIFIED_BASELINES[3];
 
+  // Tentukan task mana di VM bottleneck yang ditunjuk pemandu pada Beat 1
+  const coachTaskId = useMemo(() => {
+    if (reachedOptimal) return null;
+    if (assignment[1] === 1) return 1; // T2 masih di VM 2 yang panas
+    if (assignment[4] === 0) return 4; // T5 bisa dipindah ke VM 3
+    return null;
+  }, [assignment, reachedOptimal]);
+
   return (
     <div className="flex flex-col gap-6">
-      {/* BEAT 0: Sampul + Anatomi 2-Rail Mini Metro */}
+      {/* BEAT 0: Film Pembuka Cloud Factory 60fps */}
       {showBeat0 && (
-        <div className="grid grid-cols-1 items-center gap-6 lg:grid-cols-[1.25fr_1fr]">
+        <div className="grid grid-cols-1 items-center gap-6 lg:grid-cols-[1.1fr_1.05fr]">
           <div className="flex flex-col gap-4">
-            <h1 className="font-display text-3xl font-extrabold leading-[1.06] sm:text-4xl lg:text-5xl">
-              Hybrid <span className="marker-highlight">SA + 2-Opt</span> untuk Penjadwalan Cloud.
+            <h1 className="font-display text-3xl font-extrabold leading-[1.08] sm:text-4xl lg:text-[44px]">
+              Hybrid{' '}
+              <span style={{ color: 'var(--sa-heat)' }}>SA</span> +{' '}
+              <span style={{ color: 'var(--opt-cyan)' }}>2-Opt</span> untuk Penjadwalan Cloud
             </h1>
-            <p className="max-w-xl text-base leading-relaxed text-[var(--ink-secondary)] sm:text-lg">
-              Bayangkan <strong className="text-[var(--ink-primary)]">task cloud</strong> sebagai paket
-              dan <strong className="text-[var(--ink-primary)]">VM server</strong> (DC Jakarta &
-              Surabaya) sebagai jalur kurir dengan kecepatan berbeda. Tujuannya satu: perkecil{' '}
-              <strong className="text-[var(--ink-primary)]">Makespan</strong> (waktu selesai VM yang
-              paling akhir).
+            <p className="m-0 max-w-xl text-sm leading-relaxed text-[var(--ink-secondary)] sm:text-base">
+              Tonton animasi di kanan: <strong className="text-[var(--ink-primary)]">task cloud</strong>{' '}
+              mengalir masuk ke server <strong className="text-[var(--ink-primary)]">DC Jakarta & Surabaya</strong>{' '}
+              dengan kecepatan berbeda. Tugas algoritma penjadwalan adalah membagi beban seimbang agar{' '}
+              <strong className="text-[var(--ink-primary)]">Makespan</strong> (waktu selesai VM terakhir)
+              sekecil mungkin.
             </p>
 
-            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-              <div
-                className="transit-card flex flex-col gap-1 p-3.5"
-                style={{ borderColor: 'var(--sa-heat)' }}
-              >
-                <span
-                  className="font-mono-tabular text-xs font-bold uppercase"
-                  style={{ color: 'var(--sa-heat)' }}
-                >
-                  Jalur 1 · Simulated Annealing
-                </span>
-                <p className="m-0 text-sm font-semibold">
-                  Menjelajah solusi luas saat suhu panas agar tidak terjebak di hasil tanggung.
-                </p>
-              </div>
-              <div
-                className="transit-card flex flex-col gap-1 p-3.5"
-                style={{ borderColor: 'var(--opt-rail)' }}
-              >
-                <span
-                  className="font-mono-tabular text-xs font-bold uppercase"
-                  style={{ color: 'var(--opt-rail)' }}
-                >
-                  Jalur 2 · 2-Opt Local Search
-                </span>
-                <p className="m-0 text-sm font-semibold">
-                  Langsung merapikan jalur bersilangan dan menukar beban timpang antar-VM.
-                </p>
-              </div>
-            </div>
+            <CoachMissionBanner
+              stepLabel="Pemandu · Mulai"
+              instruction="Kamu bisa klik 'Putar Otomatis' di bawah seperti menonton video, atau langsung klik tombol emas untuk mencoba sendiri."
+            />
 
             {!exploreAll && (
               <div className="flex flex-wrap items-center gap-3 pt-1">
+                <CoachTarget active label="Mulai dari sini!" position="bottom">
+                  <button
+                    type="button"
+                    onClick={() => setBeat(1)}
+                    className="btn-studio btn-studio-gold"
+                  >
+                    Coba Atur Server Sendiri (30 dtk)
+                  </button>
+                </CoachTarget>
                 <button
                   type="button"
-                  onClick={() => setBeat(1)}
-                  className="btn-transit btn-transit-signal"
+                  onClick={toggleAutoPlay}
+                  className="btn-studio"
                 >
-                  Coba Mini-Game Dispatch (30 dtk) →
+                  ▶ Tonton Mode Video
                 </button>
               </div>
             )}
           </div>
 
-          {/* Diagram Peta Jaringan Mini Metro + Identitas Kelompok 4 */}
           <div className="flex flex-col gap-3">
-            <div className="transit-card p-4">
-              <div className="font-mono-tabular mb-2 text-xs font-bold uppercase text-[var(--ink-secondary)]">
-                Alur Kerja Hybrid (Pola LRH)
+            <CloudFactoryCanvas />
+
+            <div className="studio-panel p-3.5">
+              <div className="mb-2 text-xs font-bold text-[var(--ink-secondary)]">
+                Kelompok 4 · SOKA Kelas C · Institut Teknologi Sepuluh Nopember
               </div>
-              <svg
-                viewBox="0 0 420 190"
-                className="w-full"
-                role="img"
-                aria-label="Diagram alur dua jalur: SA menjelajah lalu 2-Opt merapikan beban VM"
-              >
-                {/* Rel SA (Heat) */}
-                <path
-                  d="M 36 52 H 158 C 192 52 192 96 226 96 H 380"
-                  fill="none"
-                  stroke="var(--sa-heat)"
-                  strokeWidth="7"
-                  strokeLinecap="round"
-                />
-                {/* Rel 2-Opt (Cobalt) */}
-                <path
-                  d="M 36 140 H 158 C 192 140 192 96 226 96"
-                  fill="none"
-                  stroke="var(--opt-rail)"
-                  strokeWidth="7"
-                  strokeLinecap="round"
-                />
-                {/* Segmen akhir Seimbang (Emerald) */}
-                <path
-                  d="M 275 96 H 382"
-                  fill="none"
-                  stroke="var(--ok-balance)"
-                  strokeWidth="7"
-                  strokeLinecap="round"
-                />
-
-                {/* Simpul 1: SA */}
-                <circle
-                  cx="56"
-                  cy="52"
-                  r="13"
-                  fill="var(--bg-elevated)"
-                  stroke="var(--sa-heat)"
-                  strokeWidth="5"
-                />
-                <text
-                  x="56"
-                  y="27"
-                  textAnchor="middle"
-                  fill="var(--ink-primary)"
-                  fontSize="12"
-                  fontWeight="700"
-                  fontFamily="var(--font-mono)"
-                >
-                  SA (Global)
-                </text>
-
-                {/* Simpul 2: 2-Opt */}
-                <rect
-                  x="43"
-                  y="127"
-                  width="26"
-                  height="26"
-                  rx="4"
-                  fill="var(--bg-elevated)"
-                  stroke="var(--opt-rail)"
-                  strokeWidth="5"
-                />
-                <text
-                  x="56"
-                  y="174"
-                  textAnchor="middle"
-                  fill="var(--ink-primary)"
-                  fontSize="12"
-                  fontWeight="700"
-                  fontFamily="var(--font-mono)"
-                >
-                  2-Opt (Lokal)
-                </text>
-
-                {/* Simpul Gabung: Hybrid */}
-                <circle
-                  cx="226"
-                  cy="96"
-                  r="16"
-                  fill="var(--focus-signal)"
-                  stroke="var(--border-ink)"
-                  strokeWidth="4"
-                />
-                <text
-                  x="226"
-                  y="66"
-                  textAnchor="middle"
-                  fill="var(--ink-primary)"
-                  fontSize="12"
-                  fontWeight="800"
-                  fontFamily="var(--font-mono)"
-                >
-                  HYBRID
-                </text>
-
-                {/* Simpul Finis: Jadwal Optimal */}
-                <circle
-                  cx="364"
-                  cy="96"
-                  r="14"
-                  fill="var(--ok-balance)"
-                  stroke="var(--border-ink)"
-                  strokeWidth="4"
-                />
-                <text
-                  x="364"
-                  y="134"
-                  textAnchor="middle"
-                  fill="var(--ok-balance)"
-                  fontSize="12"
-                  fontWeight="800"
-                  fontFamily="var(--font-mono)"
-                >
-                  VM Rata
-                </text>
-              </svg>
-            </div>
-
-            <div className="transit-card p-3.5">
-              <div className="font-mono-tabular mb-2 text-xs font-bold uppercase text-[var(--ink-secondary)]">
-                Kelompok 4 · SOKA Kelas C · ITS
-              </div>
-              <ul className="m-0 flex list-none flex-col gap-1 p-0 text-xs">
+              <ul className="m-0 grid list-none grid-cols-1 gap-x-6 gap-y-1.5 p-0 text-xs sm:grid-cols-2">
                 {TEAM_MEMBERS.map((m) => (
-                  <li key={m.nrp} className="flex items-baseline justify-between gap-3">
-                    <span className="font-semibold">{m.name}</span>
+                  <li key={m.nrp} className="flex items-baseline justify-between gap-2">
+                    <span className="font-semibold text-[var(--ink-primary)]">{m.name}</span>
                     <span className="font-mono-tabular shrink-0 text-[11px] text-[var(--ink-secondary)]">
                       {m.nrp}
                     </span>
@@ -257,33 +134,50 @@ export function Scene01ProblemWhy({ beat = 0, exploreAll = false }: Scene01Props
         </div>
       )}
 
-      {/* BEAT 1: Mini-Game Cloud Dispatch (6 Task x 3 VM) */}
+      {/* BEAT 1: Mini-Game Dispatch dengan Pemandu Kursor */}
       {showBeat1 && (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3.5">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
               <h2 className="font-display text-2xl font-extrabold sm:text-3xl">
-                Tantangan 30 Detik: <span className="marker-highlight">Dinginkan VM Bottleneck!</span>
+                Tantangan 30 Detik:{' '}
+                <span style={{ color: 'var(--sa-heat)' }}>Dinginkan Server Berasap!</span>
               </h2>
               <p className="mt-1 text-sm text-[var(--ink-secondary)]">
-                Klik balok task mana saja pada jalur VM di bawah untuk memindahkannya ke VM
-                berikutnya. Kejar target optimal <strong>{optimal.metrics.makespan} detik</strong>{' '}
-                (dari total 729 kombinasi).
+                Server VM 2 sedang kepenuhan (14 detik). Pindahkan task dengan mengklik baloknya
+                untuk mencapai target optimal <strong>{optimal.metrics.makespan} detik</strong>.
               </p>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <button type="button" onClick={resetMiniGame} className="btn-transit text-xs">
+            <div className="flex flex-wrap items-center gap-2">
+              <button type="button" onClick={resetMiniGame} className="btn-studio text-xs">
                 Reset (14 s)
               </button>
-              <button
-                type="button"
-                onClick={applyOptimal}
-                className="btn-transit btn-transit-rail text-xs"
+              <CoachTarget
+                active={!reachedOptimal && moves >= 2}
+                label="Lihat kunci optimal"
+                position="top"
               >
-                Lihat Optimal ({optimal.metrics.makespan} s)
-              </button>
+                <button
+                  type="button"
+                  onClick={applyOptimal}
+                  className="btn-studio btn-studio-cyan text-xs"
+                >
+                  Lihat Optimal ({optimal.metrics.makespan} s)
+                </button>
+              </CoachTarget>
             </div>
           </div>
+
+          <CoachMissionBanner
+            stepLabel={moves === 0 ? 'Langkah 1 / 2' : 'Langkah 2 / 2'}
+            instruction={
+              moves === 0
+                ? 'Arahkan kursor ke balok T2 (5s) di rak VM 2 yang berasap merah, lalu klik untuk memindahkannya.'
+                : 'Bagus! Beban langsung berubah. Coba pindahkan task lain atau klik "Lihat Optimal (9 s)" untuk membandingkan.'
+            }
+            completed={reachedOptimal}
+            doneMessage="Mantap! Semua server seimbang di 9 detik (optimal mutlak dari 729 kombinasi). Bayangkan kalau 1.000 task di 50 VM: mustahil manual!"
+          />
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.45fr_1fr]">
             <VmRackGantt
@@ -292,19 +186,21 @@ export function Scene01ProblemWhy({ beat = 0, exploreAll = false }: Scene01Props
               scaleMax={16}
               interactive
               onTaskClick={handleTaskClick}
+              coachTaskId={coachTaskId}
+              coachTaskLabel="Klik paket ini!"
               optimalBound={optimal.metrics.makespan}
-              title={`Papan Dispatch Interaktif (${moves} kali pindah)`}
+              title={`Papan Dispatch Langsung (${moves} perpindahan)`}
             />
 
-            <div className="transit-card flex flex-col justify-between gap-3 p-3.5">
+            <div className="studio-panel flex flex-col justify-between gap-3 p-4">
               <div>
-                <div className="font-mono-tabular mb-2 text-xs font-bold uppercase text-[var(--ink-secondary)]">
-                  Waktu Eksekusi per VM (Matriks ETC, detik)
+                <div className="mb-2 text-xs font-bold text-[var(--ink-secondary)]">
+                  Durasi Eksekusi per VM (Matriks ETC, detik)
                 </div>
                 <div className="overflow-x-auto">
                   <table className="font-mono-tabular w-full border-collapse text-center text-xs">
                     <thead>
-                      <tr className="border-b-2 border-[var(--border-ink)]">
+                      <tr className="border-b border-[var(--border-line)]">
                         <th className="py-1.5 text-left">Task</th>
                         {MINI_DISPATCH_PROBLEM.vms.map((v) => (
                           <th key={v.id} className="py-1.5">
@@ -315,19 +211,17 @@ export function Scene01ProblemWhy({ beat = 0, exploreAll = false }: Scene01Props
                     </thead>
                     <tbody>
                       {MINI_DISPATCH_PROBLEM.tasks.map((task, tIdx) => (
-                        <tr key={task.id} className="border-b border-[var(--border-subtle)]">
+                        <tr key={task.id} className="border-b border-[var(--border-line)]/60">
                           <td className="py-1.5 text-left font-bold">T{tIdx + 1}</td>
                           {MINI_DISPATCH_PROBLEM.etc[tIdx].map((sec, vIdx) => {
                             const active = assignment[tIdx] === vIdx;
                             return (
                               <td
                                 key={vIdx}
-                                className="py-1.5 font-semibold"
+                                className="rounded py-1.5 font-semibold"
                                 style={{
-                                  backgroundColor: active ? 'var(--focus-signal)' : 'transparent',
-                                  color: active
-                                    ? 'var(--focus-signal-ink)'
-                                    : 'var(--ink-secondary)',
+                                  backgroundColor: active ? 'var(--coach-gold)' : 'transparent',
+                                  color: active ? 'var(--coach-ink)' : 'var(--ink-secondary)',
                                   fontWeight: active ? 800 : 500,
                                 }}
                               >
@@ -342,109 +236,89 @@ export function Scene01ProblemWhy({ beat = 0, exploreAll = false }: Scene01Props
                 </div>
               </div>
 
-              <div
-                role="status"
-                aria-live="polite"
-                className="rounded-lg border-2 px-3 py-2 text-xs font-semibold"
-                style={{
-                  borderColor:
-                    currentMetrics.makespan <= optimal.metrics.makespan
-                      ? 'var(--ok-balance)'
-                      : 'var(--border-subtle)',
-                  backgroundColor:
-                    currentMetrics.makespan <= optimal.metrics.makespan
-                      ? 'var(--ok-balance-soft)'
-                      : 'var(--bg-surface)',
-                }}
-              >
-                {currentMetrics.makespan <= optimal.metrics.makespan ? (
-                  <span style={{ color: 'var(--ok-balance)' }}>
-                    Berhasil! Semua rak seimbang di {currentMetrics.makespan} s (optimal mutlak).
-                    Bayangkan kalau task-nya 1.000 di 50 VM: kombinasinya 50^1000, mustahil manual!
-                  </span>
-                ) : (
-                  <span>
-                    Makespan saat ini <strong>{currentMetrics.makespan} s</strong> (selisih +
-                    {currentMetrics.makespan - optimal.metrics.makespan} s dari optimal). Coba
-                    pindahkan T2 atau T5!
-                  </span>
-                )}
+              <div className="font-mono-tabular rounded-xl bg-[var(--bg-inset)] px-3 py-2 text-xs text-[var(--ink-secondary)]">
+                Makespan sekarang:{' '}
+                <strong
+                  style={{
+                    color: reachedOptimal ? 'var(--ok-mint)' : 'var(--sa-heat)',
+                  }}
+                >
+                  {currentMetrics.makespan} s
+                </strong>{' '}
+                · Optimal Brute-Force: <strong className="text-[var(--ok-mint)]">9 s</strong>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* BEAT 2: Kenapa Butuh Hybrid? (Data Nyata Kelompok 4) */}
+      {/* BEAT 2: Kenapa Butuh Hybrid? (Bukti Data Riil Kelompok 4) */}
       {showBeat2 && (
         <div className="flex flex-col gap-4">
           <div>
             <h2 className="font-display text-2xl font-extrabold sm:text-3xl">
-              Kenapa <span className="marker-highlight">SA Murni</span> masih butuh partner?
+              Kenapa <span style={{ color: 'var(--sa-heat)' }}>SA Murni</span> butuh partner{' '}
+              <span style={{ color: 'var(--opt-cyan)' }}>2-Opt</span>?
             </h2>
             <p className="mt-1 text-sm text-[var(--ink-secondary)]">
-              Kilas balik 3 strategi Kelompok 4 plus bukti celah nyata dari hasil CloudSim Plus kita
-              minggu lalu.
+              Dari eksperimen CloudSim Kelompok 4 minggu lalu, SA murni sudah kuat di GoCJ, tetapi
+              masih menyisakan dua celah nyata yang tepat ditutup oleh 2-Opt.
             </p>
           </div>
 
           <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-            <div className="transit-card p-3.5">
-              <div className="font-mono-tabular text-xs font-bold uppercase text-[var(--ink-secondary)]">
-                1 · Heuristik (Sufferage)
+            <div className="studio-panel p-3.5">
+              <div className="text-xs font-bold text-[var(--ink-secondary)]">
+                Heuristik (Sufferage)
               </div>
               <p className="mt-1 text-sm font-semibold">
-                Cepat sekali jalan (hitungan ms), tetapi kaku: keputusan awal tidak pernah direvisi.
+                Sangat cepat sekali jalan, tetapi kaku karena keputusan awal tidak pernah direvisi.
               </p>
             </div>
-            <div
-              className="transit-card p-3.5"
-              style={{ borderColor: 'var(--sa-heat)' }}
-            >
-              <div
-                className="font-mono-tabular text-xs font-bold uppercase"
-                style={{ color: 'var(--sa-heat)' }}
-              >
-                2 · Metaheuristik (JAYA & SA)
+            <div className="studio-panel p-3.5" style={{ borderColor: 'var(--sa-heat)' }}>
+              <div className="text-xs font-bold" style={{ color: 'var(--sa-heat)' }}>
+                Metaheuristik (JAYA & SA)
               </div>
               <p className="mt-1 text-sm font-semibold">
-                Eksplorasi luas. SA menang di 14/15 kasus GoCJ kita, tetapi polesan akhirnya acak &
-                bisa goyang.
+                Eksplorasi luas. SA menang di 14/15 kasus GoCJ kita, tetapi langkah akhirnya acak &
+                kurang rapi.
               </p>
             </div>
-            <div
-              className="transit-card p-3.5"
-              style={{ borderColor: 'var(--opt-rail)' }}
-            >
-              <div
-                className="font-mono-tabular text-xs font-bold uppercase"
-                style={{ color: 'var(--opt-rail)' }}
-              >
-                3 · Local Search (2-Opt)
+            <div className="studio-panel p-3.5" style={{ borderColor: 'var(--opt-cyan)' }}>
+              <div className="text-xs font-bold" style={{ color: 'var(--opt-cyan)' }}>
+                Local Search (2-Opt)
               </div>
               <p className="mt-1 text-sm font-semibold">
-                Tajam memoles sekitar solusi dengan cepat, tetapi jika sendirian mudah terjebak di
-                local optimum.
+                Cepat memoles beban timpang antar-VM, tetapi mudah terjebak lokal jika berjalan
+                sendirian.
               </p>
             </div>
           </div>
 
-          {/* Bukti Nyata Celah SA Murni dari summary.csv Kelompok 4 */}
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-            <div className="transit-card flex flex-col gap-2 p-4">
+            <div className="studio-panel flex flex-col gap-2.5 p-4">
               <div className="flex items-center justify-between gap-2">
                 <span className="font-display text-base font-extrabold">{gocj1000.name}</span>
-                <span className="font-mono-tabular rounded bg-[var(--sa-heat-soft)] px-2 py-0.5 text-xs font-bold text-[var(--sa-heat)]">
+                <span
+                  className="font-mono-tabular rounded-md px-2 py-0.5 text-xs font-bold"
+                  style={{
+                    backgroundColor: 'var(--sa-heat-soft)',
+                    color: 'var(--sa-heat)',
+                  }}
+                >
                   DOI SA = 0,43
                 </span>
               </div>
-              <div className="flex flex-col gap-1.5 text-xs">
+              <div className="flex flex-col gap-2 text-xs">
                 {gocj1000.rows.slice(0, 3).map((row) => (
-                  <div key={row.algorithm} className="grid grid-cols-[120px_1fr_82px] items-center gap-2">
+                  <div
+                    key={row.algorithm}
+                    className="grid grid-cols-[110px_1fr_82px] items-center gap-2"
+                  >
                     <span className="font-semibold">{row.algorithm}</span>
-                    <div className="h-4 overflow-hidden rounded bg-[var(--bg-muted)]">
+                    <div className="h-4 overflow-hidden rounded-full bg-[var(--bg-inset)]">
                       <div
-                        className="h-full rounded"
+                        className="h-full rounded-full transition-all duration-500"
                         style={{
                           width: `${(row.makespanMean / 3700) * 100}%`,
                           backgroundColor:
@@ -459,25 +333,34 @@ export function Scene01ProblemWhy({ beat = 0, exploreAll = false }: Scene01Props
                 ))}
               </div>
               <p className="m-0 text-xs text-[var(--ink-secondary)]">
-                Di 1000 task, SA murni masih menyisakan deviasi ±51,7 s antar-seed dan beban antar-VM
-                belum sepenuhnya rata.
+                Pada 1000 task, SA murni masih memiliki simpangan ±51,7 s dan ketimpangan antar-VM
+                (DOI 0,43).
               </p>
             </div>
 
-            <div className="transit-card flex flex-col gap-2 p-4">
+            <div className="studio-panel flex flex-col gap-2.5 p-4">
               <div className="flex items-center justify-between gap-2">
                 <span className="font-display text-base font-extrabold">{nasa750.name}</span>
-                <span className="font-mono-tabular rounded bg-[var(--sa-heat-soft)] px-2 py-0.5 text-xs font-bold text-[var(--sa-heat)]">
+                <span
+                  className="font-mono-tabular rounded-md px-2 py-0.5 text-xs font-bold"
+                  style={{
+                    backgroundColor: 'var(--sa-heat-soft)',
+                    color: 'var(--sa-heat)',
+                  }}
+                >
                   Std SA ±66.963 s
                 </span>
               </div>
-              <div className="flex flex-col gap-1.5 text-xs">
+              <div className="flex flex-col gap-2 text-xs">
                 {nasa750.rows.slice(0, 3).map((row) => (
-                  <div key={row.algorithm} className="grid grid-cols-[120px_1fr_88px] items-center gap-2">
+                  <div
+                    key={row.algorithm}
+                    className="grid grid-cols-[110px_1fr_88px] items-center gap-2"
+                  >
                     <span className="font-semibold">{row.algorithm}</span>
-                    <div className="h-4 overflow-hidden rounded bg-[var(--bg-muted)]">
+                    <div className="h-4 overflow-hidden rounded-full bg-[var(--bg-inset)]">
                       <div
-                        className="h-full rounded"
+                        className="h-full rounded-full transition-all duration-500"
                         style={{
                           width: `${(row.makespanMean / 960000) * 100}%`,
                           backgroundColor:
@@ -492,8 +375,8 @@ export function Scene01ProblemWhy({ beat = 0, exploreAll = false }: Scene01Props
                 ))}
               </div>
               <p className="m-0 text-xs text-[var(--ink-secondary)]">
-                Pada beban ekstrem NASA, perpindahan acak tunggal SA tidak selalu sempat memoles
-                hasil (terburuk 1.075.200 s). Gabungan SA + 2-Opt menutup celah ini.
+                Di beban NASA, hasil SA murni naik-turun antar-seed (terburuk 1.075.200 s). Polesan
+                2-Opt membantu menstabilkan hasil.
               </p>
             </div>
           </div>
