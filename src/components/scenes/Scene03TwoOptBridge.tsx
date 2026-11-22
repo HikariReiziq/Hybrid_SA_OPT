@@ -275,7 +275,7 @@ export function Scene03TwoOptBridge({ beat = 0, exploreAll = false }: Scene03Pro
                 }
               />
 
-              <div className="studio-panel flex flex-col gap-3 p-4">
+              <div className="studio-panel flex flex-col gap-3 p-4 pb-10">
                 <div className="text-xs font-bold" style={{ color: 'var(--opt-cyan)' }}>
                   Adaptasi A · Pairwise 2-Opt Swap antar-VM
                 </div>
@@ -290,7 +290,7 @@ export function Scene03TwoOptBridge({ beat = 0, exploreAll = false }: Scene03Pro
                   </strong>{' '}
                   {swapped && '(turun 33% dalam 1 tukar!)'}
                 </div>
-                <CoachTarget active={!swapped} label="Klik untuk tukar!" position="top" className="w-full">
+                <CoachTarget active={!swapped} label="Klik untuk tukar!" position="bottom" className="w-full">
                   <button
                     type="button"
                     onClick={() => {
@@ -319,7 +319,7 @@ export function Scene03TwoOptBridge({ beat = 0, exploreAll = false }: Scene03Pro
                 title={`Hasil Decoder EFT (Makespan ${formatId(permMetrics.makespan, 0)} s)`}
               />
 
-              <div className="studio-panel flex flex-col gap-3 p-4">
+              <div className="studio-panel flex flex-col gap-3 p-4 pb-10">
                 <div className="text-xs font-bold" style={{ color: 'var(--opt-cyan)' }}>
                   Adaptasi B · Permutasi Urutan + Reverse Segmen
                 </div>
@@ -347,7 +347,7 @@ export function Scene03TwoOptBridge({ beat = 0, exploreAll = false }: Scene03Pro
                     );
                   })}
                 </div>
-                <CoachTarget active={!permReversed} label="Klik balik segmen!" position="top" className="w-full">
+                <CoachTarget active={!permReversed} label="Klik balik segmen!" position="bottom" className="w-full">
                   <button
                     type="button"
                     onClick={() => {

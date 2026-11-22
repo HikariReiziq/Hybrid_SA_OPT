@@ -134,10 +134,15 @@ export function VmRackGantt({
             }
           }
 
+          const hasCoachedTask =
+            interactive && coachTaskId !== null && tasksOnVm.some((blk) => blk.taskId === coachTaskId);
+
           return (
             <div
               key={vm.id}
-              className="grid grid-cols-[100px_1fr_56px] items-center gap-2 rounded-xl border px-2.5 py-2 transition-colors duration-200"
+              className={`grid grid-cols-[100px_1fr_56px] items-center gap-2 rounded-xl border px-2.5 transition-all duration-200 ${
+                hasCoachedTask ? 'pb-2 pt-9' : 'py-2'
+              }`}
               style={{
                 borderColor: isHot
                   ? 'var(--sa-heat)'
@@ -185,6 +190,9 @@ export function VmRackGantt({
                   const shortTag = `T${blk.taskId + 1}`;
 
                   if (interactive && onTaskClick) {
+                    const showDuration = widthPct >= 14;
+                    const coachAlign =
+                      leftPct < 18 ? 'start' : leftPct + widthPct > 82 ? 'end' : 'center';
                     const btn = (
                       <button
                         type="button"
@@ -200,7 +208,7 @@ export function VmRackGantt({
                         }}
                       >
                         <span className="truncate px-0.5 text-[11px]">
-                          {shortTag}·{formatId(blk.dur, 0)}s
+                          {showDuration ? `${shortTag}·${formatId(blk.dur, 0)}s` : shortTag}
                         </span>
                       </button>
                     );
@@ -215,7 +223,13 @@ export function VmRackGantt({
                         }}
                       >
                         {isCoached ? (
-                          <CoachTarget active label={coachTaskLabel} position="top" className="w-full">
+                          <CoachTarget
+                            active
+                            label={coachTaskLabel}
+                            position="top"
+                            align={coachAlign}
+                            className="w-full"
+                          >
                             {btn}
                           </CoachTarget>
                         ) : (

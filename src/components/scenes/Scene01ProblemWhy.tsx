@@ -58,13 +58,15 @@ export function Scene01ProblemWhy({ beat = 0, exploreAll = false }: Scene01Props
   const gocj1000 = KELOMPOK4_VERIFIED_BASELINES[1];
   const nasa750 = KELOMPOK4_VERIFIED_BASELINES[3];
 
-  // Tentukan task mana di VM bottleneck yang ditunjuk pemandu pada Beat 1
+  // Pastikan hanya ada 1 target kursor aktif di layar pada satu waktu:
+  // Langkah 1 (moves < 2): tunjuk paket task di VM bottleneck yang sedang panas.
+  // Langkah 2 (moves >= 2): serahkan pemandu ke tombol "Lihat Optimal (9 s)".
   const coachTaskId = useMemo(() => {
-    if (reachedOptimal) return null;
-    if (assignment[1] === 1) return 1; // T2 masih di VM 2 yang panas
-    if (assignment[4] === 0) return 4; // T5 bisa dipindah ke VM 3
-    return null;
-  }, [assignment, reachedOptimal]);
+    if (reachedOptimal || moves >= 2) return null;
+    if (assignment[1] === 1 && currentMetrics.bottleneckVm === 1) return 1; // T2 di VM 2 yang panas
+    const hotTask = assignment.findIndex((vmIdx) => vmIdx === currentMetrics.bottleneckVm);
+    return hotTask >= 0 ? hotTask : null;
+  }, [assignment, currentMetrics.bottleneckVm, moves, reachedOptimal]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -156,6 +158,7 @@ export function Scene01ProblemWhy({ beat = 0, exploreAll = false }: Scene01Props
                 active={!reachedOptimal && moves >= 2}
                 label="Lihat kunci optimal"
                 position="top"
+                align="end"
               >
                 <button
                   type="button"
@@ -169,11 +172,11 @@ export function Scene01ProblemWhy({ beat = 0, exploreAll = false }: Scene01Props
           </div>
 
           <CoachMissionBanner
-            stepLabel={moves === 0 ? 'Langkah 1 / 2' : 'Langkah 2 / 2'}
+            stepLabel={moves < 2 ? 'Langkah 1 / 2' : 'Langkah 2 / 2'}
             instruction={
-              moves === 0
-                ? 'Arahkan kursor ke balok T2 (5s) di rak VM 2 yang berasap merah, lalu klik untuk memindahkannya.'
-                : 'Bagus! Beban langsung berubah. Coba pindahkan task lain atau klik "Lihat Optimal (9 s)" untuk membandingkan.'
+              coachTaskId !== null
+                ? `Klik balok T${coachTaskId + 1} di dalam rak VM ${assignment[coachTaskId] + 1} yang berasap merah untuk mengurangi bebannya.`
+                : 'Bagus! Kamu sudah merasakan perubahan bebannya. Klik tombol biru "Lihat Optimal (9 s)" di kanan atas untuk melihat kunci optimalnya.'
             }
             completed={reachedOptimal}
             doneMessage="Mantap! Semua server seimbang di 9 detik (optimal mutlak dari 729 kombinasi). Bayangkan kalau 1.000 task di 50 VM: mustahil manual!"
@@ -187,7 +190,7 @@ export function Scene01ProblemWhy({ beat = 0, exploreAll = false }: Scene01Props
               interactive
               onTaskClick={handleTaskClick}
               coachTaskId={coachTaskId}
-              coachTaskLabel="Klik paket ini!"
+              coachTaskLabel={coachTaskId !== null ? `Klik T${coachTaskId + 1} ini!` : 'Klik paket ini!'}
               optimalBound={optimal.metrics.makespan}
               title={`Papan Dispatch Langsung (${moves} perpindahan)`}
             />

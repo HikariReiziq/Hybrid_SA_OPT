@@ -186,7 +186,7 @@ export function Scene05CompareClosing({ beat = 0, exploreAll = false }: Scene05P
             doneMessage="Terlihat jelas! Di NASA, variansi SA murni mencapai ±66.963 s. Begitu tim selesai simulasi CloudSim, file JSON bisa diunggah lewat tombol biru."
           />
 
-          <div className="flex flex-wrap gap-2">
+          <div className="mt-4 flex flex-wrap gap-2">
             {KELOMPOK4_VERIFIED_BASELINES.map((sc) => {
               const active = sc.id === scenarioId;
               const isNasaGuide = sc.id === 'nasa-750x50' && scenarioId !== 'nasa-750x50';
@@ -206,7 +206,7 @@ export function Scene05CompareClosing({ beat = 0, exploreAll = false }: Scene05P
               );
 
               return isNasaGuide ? (
-                <CoachTarget key={sc.id} active label="Coba cek NASA" position="top">
+                <CoachTarget key={sc.id} active label="Coba cek NASA" position="top" align="end">
                   {btn}
                 </CoachTarget>
               ) : (
@@ -348,7 +348,7 @@ export function Scene05CompareClosing({ beat = 0, exploreAll = false }: Scene05P
           <QuizCard quiz={QUIZZES.q2} compact />
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-[0.88fr_1.35fr]">
-            <div className="studio-panel flex flex-col justify-between gap-3 p-4">
+            <div className="studio-panel flex flex-col justify-between gap-3 p-4 pb-10">
               <div>
                 <div className="text-xs font-bold text-[var(--ink-secondary)]">
                   Skor Kuis Percobaan Pertama
@@ -373,7 +373,7 @@ export function Scene05CompareClosing({ beat = 0, exploreAll = false }: Scene05P
                 </ul>
               </div>
 
-              <CoachTarget active={q2Done} label="Lanjut eksperimen bebas!" position="top" className="w-full">
+              <CoachTarget active={q2Done} label="Lanjut eksperimen bebas!" position="bottom" className="w-full">
                 <button
                   type="button"
                   onClick={() => setViewMode('sandbox')}

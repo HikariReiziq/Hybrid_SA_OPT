@@ -61,7 +61,7 @@ export function SandboxView() {
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[330px_1fr]">
         {/* Panel Kontrol Parameter */}
-        <aside className="theater-stage flex flex-col gap-4 p-4">
+        <aside className="theater-stage flex flex-col gap-4 p-4 pb-11">
           <div className="flex flex-col gap-1.5">
             <span className="text-xs font-bold text-[var(--ink-secondary)]">
               Ablation Toggle (2-Opt)
@@ -227,7 +227,7 @@ export function SandboxView() {
                 Seed Baru
               </button>
             </div>
-            <CoachTarget active={batchStats === null} label="Coba uji 10 seed!" position="top" className="w-full">
+            <CoachTarget active={batchStats === null} label="Coba uji 10 seed!" position="bottom" className="w-full">
               <button
                 type="button"
                 onClick={runBatch10Seeds}

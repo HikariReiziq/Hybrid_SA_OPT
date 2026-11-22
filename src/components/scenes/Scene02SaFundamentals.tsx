@@ -155,14 +155,14 @@ export function Scene02SaFundamentals({ beat = 0, exploreAll = false }: Scene02P
             doneMessage="Keren! Kamu sudah paham inti Simulated Annealing. Kamu bebas menggeser slider Suhu T dan ΔE sepuasnya."
           />
 
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.25fr_1fr]">
-            <div className="studio-panel flex flex-col gap-3.5 p-4">
+          <div className="mt-2 grid grid-cols-1 gap-4 lg:grid-cols-[1.25fr_1fr]">
+            <div className="studio-panel flex flex-col gap-3.5 p-4 pt-6">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="text-xs font-bold text-[var(--ink-secondary)]">
                   Termostat Metropolis Interaktif
                 </span>
                 <div className="flex flex-wrap items-center gap-2">
-                  <CoachTarget active={coachStage === 0} label="Klik 1: Suhu Dingin" position="top">
+                  <CoachTarget active={coachStage === 0} label="Klik 1: Suhu Dingin" position="top" align="center">
                     <button
                       type="button"
                       onClick={() => {
@@ -180,7 +180,7 @@ export function Scene02SaFundamentals({ beat = 0, exploreAll = false }: Scene02P
                     </button>
                   </CoachTarget>
 
-                  <CoachTarget active={coachStage === 1} label="Klik 2: Suhu Panas" position="top">
+                  <CoachTarget active={coachStage === 1} label="Klik 2: Suhu Panas" position="top" align="end">
                     <button
                       type="button"
                       onClick={() => {
